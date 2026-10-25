@@ -2,6 +2,7 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 18 | 25/10/2026 | Entrega 5.8: verificação em duas etapas (Google Authenticator) exigida também pelo banco, esqueci a senha, olho na senha, regra de senha forte, CSP, bibliotecas servidas pelo próprio site, bloqueio em iframe |
 | 17 | 25/10/2026 | Entrega 5: dados no Supabase com login por e-mail e senha, publicação no GitHub Pages, restauração de backup em lote e no primeiro acesso, download pelo navegador |
 | 16 | 25/10/2026 | Parcela vinda da planilha: mostra o valor cheio da parcela e as faturas restantes, sem prévia de redivisão |
 | 15 | 24/10/2026 | Lançamentos: total da categoria filtrada ao lado do filtro |

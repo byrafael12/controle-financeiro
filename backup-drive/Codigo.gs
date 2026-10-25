@@ -13,6 +13,8 @@
  *   EMAIL     e-mail de login do app
  *   SENHA     senha de login do app (fica só nesta conta Google; nunca vai para o GitHub)
  *   PASTA_ID  id da pasta do Drive (o trecho final do endereço da pasta)
+ *   TOTP_CHAVE chave de configuração do Google Authenticator (mostrada pelo app ao ativar a
+ *              verificação em duas etapas). Com ela o script gera o código de 6 dígitos sozinho.
  * Depois rode uma vez "testarAgora" e uma vez "instalarAgendamento".
  */
 
@@ -74,7 +76,7 @@ function fazerBackup(props) {
   const pastaId = props.getProperty("PASTA_ID");
   if (!email || !senha || !pastaId) throw new Error("Faltam EMAIL, SENHA ou PASTA_ID nas Propriedades do script.");
 
-  const sessao = entrar(email, senha);
+  const sessao = entrar(email, senha, props.getProperty("TOTP_CHAVE"));
   try {
     const colecoes = {};
     for (const t of TABELAS) colecoes[t.colecao] = lerTabela(sessao, t);
@@ -103,7 +105,7 @@ function fazerBackup(props) {
   }
 }
 
-function entrar(email, senha) {
+function entrar(email, senha, chaveTotp) {
   const r = UrlFetchApp.fetch(SUPABASE_URL + "/auth/v1/token?grant_type=password", {
     method: "post", contentType: "application/json", muteHttpExceptions: true,
     headers: { apikey: SUPABASE_CHAVE_PUBLICA },
@@ -113,8 +115,47 @@ function entrar(email, senha) {
     throw new Error("Login no Supabase falhou (código " + r.getResponseCode() + "). Confira EMAIL e SENHA nas Propriedades do script.");
   }
   const corpo = JSON.parse(r.getContentText());
-  return { token: corpo.access_token, uid: corpo.user.id };
+  const sessao = { token: corpo.access_token, uid: corpo.user.id };
+  // Verificação em duas etapas: sem ela o banco devolve as tabelas vazias
+  const fator = (corpo.user.factors || []).find(function (f) { return f.factor_type === "totp" && f.status === "verified"; });
+  if (!fator) return sessao;
+  if (!chaveTotp) throw new Error("A verificação em duas etapas está ativa, mas falta a TOTP_CHAVE nas Propriedades do script.");
+  for (let tentativa = 0; tentativa < 2; tentativa++) {
+    const desafio = UrlFetchApp.fetch(SUPABASE_URL + "/auth/v1/factors/" + fator.id + "/challenge", {
+      method: "post", contentType: "application/json", muteHttpExceptions: true, headers: cabecalhos(sessao), payload: "{}"
+    });
+    if (desafio.getResponseCode() !== 200) throw new Error("Não consegui iniciar a verificação em duas etapas (código " + desafio.getResponseCode() + ").");
+    const v = UrlFetchApp.fetch(SUPABASE_URL + "/auth/v1/factors/" + fator.id + "/verify", {
+      method: "post", contentType: "application/json", muteHttpExceptions: true, headers: cabecalhos(sessao),
+      payload: JSON.stringify({ challenge_id: JSON.parse(desafio.getContentText()).id, code: gerarCodigoTotp(chaveTotp) })
+    });
+    if (v.getResponseCode() === 200) {
+      const s2 = JSON.parse(v.getContentText());
+      sessao.token = s2.access_token;
+      return sessao;
+    }
+    Utilities.sleep(2000); // o código pode ter virado no meio do caminho: tenta mais uma vez com o novo
+  }
+  throw new Error("Código da verificação em duas etapas recusado. Confira a TOTP_CHAVE nas Propriedades do script.");
 }
+
+// Código de 6 dígitos (padrão TOTP, o mesmo do Google Authenticator): HMAC-SHA1 a cada 30 segundos
+function gerarCodigoTotp(chave) {
+  const alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = "";
+  for (const ch of String(chave).toUpperCase().replace(/[^A-Z2-7]/g, "")) bits += alfabeto.indexOf(ch).toString(2).padStart(5, "0");
+  const chaveBytes = [];
+  for (let i = 0; i + 8 <= bits.length; i += 8) chaveBytes.push(paraByte(parseInt(bits.slice(i, i + 8), 2)));
+  let contador = Math.floor(Date.now() / 30000);
+  const mensagem = [];
+  for (let i = 7; i >= 0; i--) { mensagem[i] = paraByte(contador % 256); contador = Math.floor(contador / 256); }
+  const h = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_1, mensagem, chaveBytes).map(function (b) { return b & 255; });
+  const o = h[19] & 15;
+  const numero = ((h[o] & 127) * 16777216) + (h[o + 1] * 65536) + (h[o + 2] * 256) + h[o + 3];
+  return String(numero % 1000000).padStart(6, "0");
+}
+
+function paraByte(n) { return n > 127 ? n - 256 : n; }
 
 function sair(sessao) {
   try {

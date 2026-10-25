@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-dDG5OrU4Pf9nS7kakl45J34mQjTNiAce6dFZ5qF40Ag='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Finanças">
 <title>Controle Financeiro</title>
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 17 (Entrega 5), 25/10/2026: dados no Supabase com login. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 18 (Entrega 5.8), 25/10/2026: verificação em duas etapas, esqueci a senha, olho na senha, CSP e bibliotecas locais. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -341,19 +342,93 @@ select.filtro { width: auto; min-width: 170px; }
 .login h1 { margin: 0; font-size: 1.3rem; color: var(--fg); }
 .login label { display: grid; gap: 6px; font-size: .9rem; color: var(--muted); }
 .login input { font: inherit; font-size: 16px; padding: 12px; border-radius: 10px; border: 1px solid var(--line, rgba(127,127,127,.35)); background: var(--surface-2); color: var(--fg); }
+.login form[hidden] { display: none; }
+.login .pequeno { font-size: .85rem; margin: 0; }
+.login .botao.texto { justify-self: center; min-height: 44px; }
+.campo-senha { position: relative; display: block; }
+.campo-senha input { width: 100%; padding-right: 52px; box-sizing: border-box; }
+.olho { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); width: 46px; height: 44px; border: 0; background: transparent; cursor: pointer; padding: 0; }
+.olho::before { content: ""; display: block; width: 22px; height: 22px; margin: auto; background: var(--muted);
+  -webkit-mask: var(--icone-olho) center / contain no-repeat; mask: var(--icone-olho) center / contain no-repeat; }
+.olho { --icone-olho: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E"); }
+.olho.aberto { --icone-olho: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3l18 18'/%3E%3Cpath d='M10.6 6.1A9.8 9.8 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-3 3.7M6.6 6.6A16.6 16.6 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 4.4-1'/%3E%3Cpath d='M9.9 9.9a3 3 0 0 0 4.2 4.2'/%3E%3C/svg%3E"); }
+.olho:focus-visible { outline: 2px solid var(--accent); border-radius: 8px; }
+.passos { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--fg); font-size: .92rem; }
+#qrMfa { justify-self: center; background: #fff; padding: 8px; border-radius: 10px; }
+.aviso-chave { margin: 0; font-size: .85rem; color: var(--fg); background: var(--surface-2); padding: 10px; border-radius: 10px; }
+.regras { margin: -4px 0 0; padding-left: 0; list-style: none; display: grid; gap: 4px; font-size: .85rem; color: var(--muted); }
+.regras li::before { content: "○ "; }
+.regras li.ok { color: var(--receita); }
+.regras li.ok::before { content: "✓ "; }
 .login .erro { color: var(--despesa, #c0392b); min-height: 1.2em; margin: 0; font-size: .9rem; }
 </style>
 </head>
 <body>
 
 <div class="login" id="telaLogin" hidden>
-  <form id="formLogin" autocomplete="on">
+  <!-- Entrar -->
+  <form id="formLogin" autocomplete="on" novalidate>
     <h1>Controle Financeiro</h1>
     <span class="mudo">Entre com o seu e-mail e a sua senha.</span>
     <label>E-mail<input type="email" id="loginEmail" name="email" autocomplete="username" required maxlength="120"></label>
-    <label>Senha<input type="password" id="loginSenha" name="password" autocomplete="current-password" required maxlength="200"></label>
+    <label>Senha
+      <span class="campo-senha"><input type="password" id="loginSenha" name="password" autocomplete="current-password" required maxlength="200">
+      <button type="button" class="olho" data-alvo="loginSenha" aria-label="Mostrar senha" aria-pressed="false"></button></span>
+    </label>
     <p class="erro" id="loginErro" role="alert"></p>
     <button type="submit" class="botao primario" id="loginEntrar">Entrar</button>
+    <button type="button" class="botao texto" id="linkEsqueci">Esqueci a senha</button>
+    <p class="mudo pequeno" id="loginInfo" role="status"></p>
+  </form>
+
+  <!-- Verificação em duas etapas: código do autenticador -->
+  <form id="formCodigo" hidden novalidate>
+    <h1>Verificação em duas etapas</h1>
+    <span class="mudo">Abra o Google Authenticator e digite o código de 6 dígitos do Controle Financeiro.</span>
+    <label>Código<input type="text" id="codigoMfa" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" required></label>
+    <p class="erro" id="codigoErro" role="alert"></p>
+    <button type="submit" class="botao primario" id="codigoEntrar">Confirmar</button>
+    <button type="button" class="botao texto" data-acao="sair">Sair</button>
+  </form>
+
+  <!-- Primeiro uso da verificação em duas etapas: cadastrar o autenticador -->
+  <form id="formCadastroMfa" hidden novalidate>
+    <h1>Ativar a verificação em duas etapas</h1>
+    <ol class="passos">
+      <li>No iPhone, abra o <b>Google Authenticator</b>, toque em <b>+</b> e em <b>Ler código QR</b>.</li>
+      <li>Aponte a câmera para o código abaixo. No iPhone, sem outra tela para apontar, toque em <b>Inserir chave de configuração</b> e digite a chave.</li>
+      <li>Digite aqui o código de 6 dígitos que aparecer.</li>
+    </ol>
+    <img id="qrMfa" alt="Código QR para o Google Authenticator" width="200" height="200">
+    <label>Chave de configuração<input type="text" id="chaveMfa" readonly></label>
+    <p class="aviso-chave"><b>Guarde esta chave</b> no seu gerenciador de senhas. Ela também vai nas Propriedades do script do backup automático (TOTP_CHAVE). Não mande para ninguém.</p>
+    <label>Código de 6 dígitos<input type="text" id="codigoCadastro" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" required></label>
+    <p class="erro" id="cadastroErro" role="alert"></p>
+    <button type="submit" class="botao primario" id="cadastroConfirmar">Ativar</button>
+    <button type="button" class="botao texto" data-acao="sair">Sair</button>
+  </form>
+
+  <!-- Nova senha (link do e-mail de recuperação) -->
+  <form id="formNovaSenha" hidden novalidate>
+    <h1>Criar nova senha</h1>
+    <label>Nova senha
+      <span class="campo-senha"><input type="password" id="novaSenha" autocomplete="new-password" required maxlength="200">
+      <button type="button" class="olho" data-alvo="novaSenha" aria-label="Mostrar senha" aria-pressed="false"></button></span>
+    </label>
+    <ul class="regras" id="regrasSenha">
+      <li data-regra="tamanho">Pelo menos 8 caracteres</li>
+      <li data-regra="numero">Um número</li>
+      <li data-regra="maiuscula">Uma letra maiúscula</li>
+      <li data-regra="minuscula">Uma letra minúscula</li>
+      <li data-regra="especial">Um caractere especial (@, #, $, !, …)</li>
+    </ul>
+    <label>Repita a nova senha
+      <span class="campo-senha"><input type="password" id="novaSenha2" autocomplete="new-password" required maxlength="200">
+      <button type="button" class="olho" data-alvo="novaSenha2" aria-label="Mostrar senha" aria-pressed="false"></button></span>
+    </label>
+    <label id="rotuloCodigoNova" hidden>Código do Google Authenticator<input type="text" id="codigoNovaSenha" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
+    <p class="erro" id="novaErro" role="alert"></p>
+    <button type="submit" class="botao primario" id="novaSalvar">Salvar nova senha</button>
   </form>
 </div>
 
@@ -641,9 +716,10 @@ select.filtro { width: auto; min-width: 170px; }
 
 <div class="aviso" id="aviso" role="status" hidden><span id="avisoTexto"></span><button type="button" id="avisoDesfazer">Desfazer</button></div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="lib/chart.umd.js"></script>
+<script src="lib/supabase.js"></script>
 <script>
+if (window.top !== window.self) { document.documentElement.textContent = ""; throw new Error("O app não pode ser aberto dentro de outro site."); }
 /* =====================================================================
    BANCO (Supabase)
    Camada que traduz as chamadas do app (coleção, documento, filtro, escuta)
@@ -2980,46 +3056,216 @@ async function iniciar() {
     mostrarEstado("Sem conexão", "Não consegui carregar o app. Verifique a internet e recarregue a página.");
     return;
   }
+  // O link do e-mail de recuperação chega com "type=recovery" (ou com erro, se expirou) no fim do endereço
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const veioDaRecuperacao = hash.get("type") === "recovery";
+  const erroNoLink = hash.get("error_code") || hash.get("error");
   const cliente = window.supabase.createClient(SUPABASE_URL, SUPABASE_CHAVE_PUBLICA, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit" }
   });
   estado.cliente = cliente;
-  $("botaoSair").addEventListener("click", async () => { await cliente.auth.signOut(); location.reload(); });
+  ligarEventosAcesso();
   const { data } = await cliente.auth.getSession();
-  if (data && data.session) { abrirApp(data.session); return; }
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search); // tira os dados do link da barra
+  if (erroNoLink) {
+    pedirLogin();
+    $("loginErro").textContent = erroNoLink === "otp_expired" ? "O link de recuperação expirou ou já foi usado. Peça outro em \"Esqueci a senha\"." : "Link inválido. Peça outro em \"Esqueci a senha\".";
+    return;
+  }
+  if (veioDaRecuperacao && data && data.session) { pedirNovaSenha(); return; }
+  if (data && data.session) { posLogin(); return; }
   pedirLogin();
 }
 
-function pedirLogin() {
+/* ---------- Acesso: login, verificação em duas etapas, recuperação de senha ---------- */
+const SIMBOLOS_SENHA = "!@#$%^&*()_+-=[]{};':\"|<>?,./`~";
+const REGRAS_SENHA = {
+  tamanho: s => s.length >= 8,
+  numero: s => /[0-9]/.test(s),
+  maiuscula: s => /[A-Z]/.test(s),
+  minuscula: s => /[a-z]/.test(s),
+  especial: s => [...s].some(c => SIMBOLOS_SENHA.includes(c))
+};
+function senhaForte(s) { return Object.values(REGRAS_SENHA).every(r => r(s)); }
+
+function mostrarFormAcesso(id) {
   $("app").hidden = true;
   $("telaLogin").hidden = false;
-  $("loginEmail").focus();
-  $("formLogin").onsubmit = async e => {
+  for (const f of ["formLogin", "formCodigo", "formCadastroMfa", "formNovaSenha"]) $(f).hidden = f !== id;
+  // Senha sempre volta a ficar oculta ao trocar de tela
+  document.querySelectorAll(".olho").forEach(b => alternarOlho(b, false));
+}
+
+function alternarOlho(botao, mostrar) {
+  const campo = $(botao.dataset.alvo);
+  campo.type = mostrar ? "text" : "password";
+  botao.setAttribute("aria-pressed", String(mostrar));
+  botao.setAttribute("aria-label", mostrar ? "Ocultar senha" : "Mostrar senha");
+  botao.classList.toggle("aberto", mostrar);
+}
+
+function mensagemErroAuth(error) {
+  if (!error) return "";
+  if (error.status === 429) return "Muitas tentativas. Espere alguns minutos e tente de novo.";
+  if (error.code === "mfa_verification_failed" || /invalid totp|code/i.test(error.message || "")) return "Código incorreto ou vencido. Digite o código que está aparecendo agora.";
+  if (error.code === "weak_password") return "A senha não atende às regras de segurança.";
+  if (error.code === "same_password") return "A nova senha precisa ser diferente da atual.";
+  if (error.status === 400) return "E-mail ou senha incorretos.";
+  console.error(error);
+  return "Não consegui concluir. Verifique a conexão e tente de novo.";
+}
+
+function ligarEventosAcesso() {
+  const cliente = estado.cliente;
+  document.querySelectorAll(".olho").forEach(b => b.addEventListener("click", () => alternarOlho(b, b.getAttribute("aria-pressed") !== "true")));
+  document.querySelectorAll('#telaLogin [data-acao="sair"]').forEach(b => b.addEventListener("click", async () => { await cliente.auth.signOut(); location.reload(); }));
+  $("botaoSair").addEventListener("click", async () => { await cliente.auth.signOut(); location.reload(); });
+
+  $("formLogin").addEventListener("submit", async e => {
     e.preventDefault();
     const botao = $("loginEntrar");
-    botao.disabled = true;
     $("loginErro").textContent = "";
-    const { data, error } = await estado.cliente.auth.signInWithPassword({
-      email: $("loginEmail").value.trim(), password: $("loginSenha").value
-    });
+    $("loginInfo").textContent = "";
+    if (!$("loginEmail").value.trim() || !$("loginSenha").value) { $("loginErro").textContent = "Preencha o e-mail e a senha."; return; }
+    botao.disabled = true;
+    const { error } = await cliente.auth.signInWithPassword({ email: $("loginEmail").value.trim(), password: $("loginSenha").value });
     botao.disabled = false;
-    if (error) {
-      $("loginErro").textContent = error.status === 400 ? "E-mail ou senha incorretos." :
-        error.status === 429 ? "Muitas tentativas. Espere alguns minutos." : "Não consegui entrar. Verifique a conexão.";
-      return;
-    }
+    if (error) { $("loginErro").textContent = mensagemErroAuth(error); return; }
     $("loginSenha").value = "";
+    posLogin();
+  });
+
+  $("linkEsqueci").addEventListener("click", async () => {
+    const email = $("loginEmail").value.trim();
+    $("loginErro").textContent = "";
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $("loginErro").textContent = "Digite o seu e-mail acima e toque de novo em \"Esqueci a senha\"."; $("loginEmail").focus(); return; }
+    $("linkEsqueci").disabled = true;
+    const { error } = await cliente.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    $("linkEsqueci").disabled = false;
+    if (error && error.status === 429) { $("loginErro").textContent = "Já foi enviado um e-mail há pouco. O limite é de 2 por hora: espere e confira a caixa de entrada e o spam."; return; }
+    if (error) { $("loginErro").textContent = mensagemErroAuth(error); return; }
+    // Mesma mensagem com ou sem conta, para não revelar quais e-mails existem
+    $("loginInfo").textContent = "Se este e-mail estiver cadastrado, chega em alguns minutos um link para criar uma nova senha (confira o spam). O link vale por 1 hora.";
+  });
+
+  $("formCodigo").addEventListener("submit", async e => {
+    e.preventDefault();
+    const codigo = $("codigoMfa").value.replace(/\D/g, "");
+    $("codigoErro").textContent = "";
+    if (codigo.length !== 6) { $("codigoErro").textContent = "O código tem 6 dígitos."; return; }
+    $("codigoEntrar").disabled = true;
+    const { error } = await cliente.auth.mfa.challengeAndVerify({ factorId: estado.fatorMfa, code: codigo });
+    $("codigoEntrar").disabled = false;
+    $("codigoMfa").value = "";
+    if (error) { $("codigoErro").textContent = mensagemErroAuth(error); return; }
+    posLogin();
+  });
+
+  $("formCadastroMfa").addEventListener("submit", async e => {
+    e.preventDefault();
+    const codigo = $("codigoCadastro").value.replace(/\D/g, "");
+    $("cadastroErro").textContent = "";
+    if (codigo.length !== 6) { $("cadastroErro").textContent = "O código tem 6 dígitos."; return; }
+    $("cadastroConfirmar").disabled = true;
+    const { error } = await cliente.auth.mfa.challengeAndVerify({ factorId: estado.fatorMfa, code: codigo });
+    $("cadastroConfirmar").disabled = false;
+    $("codigoCadastro").value = "";
+    if (error) { $("cadastroErro").textContent = mensagemErroAuth(error); return; }
+    mostrarAviso("Verificação em duas etapas ativada.", null);
+    posLogin();
+  });
+
+  $("novaSenha").addEventListener("input", desenharRegrasSenha);
+  $("formNovaSenha").addEventListener("submit", async e => {
+    e.preventDefault();
+    const senha = $("novaSenha").value;
+    $("novaErro").textContent = "";
+    if (!senhaForte(senha)) { $("novaErro").textContent = "A senha ainda não atende a todas as regras da lista."; return; }
+    if (senha !== $("novaSenha2").value) { $("novaErro").textContent = "As duas senhas estão diferentes."; return; }
+    $("novaSalvar").disabled = true;
+    try {
+      // Com a verificação em duas etapas ativa, a troca de senha exige o código antes
+      if (estado.fatorMfa) {
+        const codigo = $("codigoNovaSenha").value.replace(/\D/g, "");
+        if (codigo.length !== 6) { $("novaErro").textContent = "Digite o código de 6 dígitos do Google Authenticator."; return; }
+        const { error } = await cliente.auth.mfa.challengeAndVerify({ factorId: estado.fatorMfa, code: codigo });
+        if (error) { $("novaErro").textContent = mensagemErroAuth(error); return; }
+      }
+      const { error } = await cliente.auth.updateUser({ password: senha });
+      if (error) { $("novaErro").textContent = mensagemErroAuth(error); return; }
+      $("novaSenha").value = ""; $("novaSenha2").value = ""; $("codigoNovaSenha").value = "";
+      mostrarAviso("Senha alterada. Se usa o backup automático, atualize a SENHA nas Propriedades do script.", null);
+      posLogin();
+    } finally {
+      $("novaSalvar").disabled = false;
+    }
+  });
+}
+
+function desenharRegrasSenha() {
+  const s = $("novaSenha").value;
+  document.querySelectorAll("#regrasSenha li").forEach(li => li.classList.toggle("ok", REGRAS_SENHA[li.dataset.regra](s)));
+}
+
+// O Supabase devolve o QR como SVG cru ("data:image/svg+xml;utf-8,<svg…>"); um "#" nas cores corta a imagem. Recodifica.
+function qrComoImagem(qr) {
+  const m = /^data:image\/svg\+xml;utf-8,([\s\S]*)$/.exec(qr || "");
+  return m ? "data:image/svg+xml;charset=utf-8," + encodeURIComponent(m[1]) : qr;
+}
+
+function pedirLogin() {
+  mostrarFormAcesso("formLogin");
+  $("loginEmail").focus();
+}
+
+async function pedirNovaSenha() {
+  mostrarFormAcesso("formNovaSenha");
+  desenharRegrasSenha();
+  const { data } = await estado.cliente.auth.mfa.listFactors();
+  const fator = data && data.totp && data.totp.find(f => f.status === "verified");
+  estado.fatorMfa = fator ? fator.id : null;
+  $("rotuloCodigoNova").hidden = !fator;
+  $("novaSenha").focus();
+}
+
+// Depois do e-mail e senha: exige o código do autenticador (ou cadastra o autenticador na primeira vez)
+async function posLogin() {
+  const cliente = estado.cliente;
+  const { data: nivel, error } = await cliente.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (error) { pedirLogin(); $("loginErro").textContent = mensagemErroAuth(error); return; }
+  if (nivel.currentLevel === "aal2") {
+    const { data } = await cliente.auth.getSession();
     abrirApp(data.session);
-  };
+    return;
+  }
+  const { data: fatores } = await cliente.auth.mfa.listFactors();
+  const verificado = fatores && fatores.totp && fatores.totp.find(f => f.status === "verified");
+  if (verificado) {
+    estado.fatorMfa = verificado.id;
+    mostrarFormAcesso("formCodigo");
+    $("codigoMfa").focus();
+    return;
+  }
+  // Primeira vez: apaga cadastros abandonados e cria um novo
+  for (const f of (fatores && fatores.all) || []) {
+    if (f.status !== "verified") await cliente.auth.mfa.unenroll({ factorId: f.id });
+  }
+  const { data: novo, error: erroCadastro } = await cliente.auth.mfa.enroll({ factorType: "totp", friendlyName: "Google Authenticator", issuer: "Controle Financeiro" });
+  if (erroCadastro) { pedirLogin(); $("loginErro").textContent = mensagemErroAuth(erroCadastro); return; }
+  estado.fatorMfa = novo.id;
+  $("qrMfa").src = qrComoImagem(novo.totp.qr_code);
+  $("chaveMfa").value = novo.totp.secret;
+  mostrarFormAcesso("formCadastroMfa");
 }
 
 function abrirApp(sessao) {
+  if (estado.banco) return; // já aberto
   $("telaLogin").hidden = true;
   $("app").hidden = false;
   estado.cliente.auth.onAuthStateChange(evento => { if (evento === "SIGNED_OUT") location.reload(); });
   estado.banco = new Banco(estado.cliente, sessao.user.id);
   estado.raiz = estado.banco;
-  $("infoConta").textContent = "Conectado como " + sessao.user.email + ".";
+  $("infoConta").textContent = "Conectado como " + sessao.user.email + ", com verificação em duas etapas.";
   escutarCategorias();
   escutarCartoes();
   escutarFixas();
