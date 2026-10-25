@@ -2,6 +2,7 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 17 | 25/10/2026 | Entrega 5: dados no Supabase com login por e-mail e senha, publicação no GitHub Pages, restauração de backup em lote e no primeiro acesso, download pelo navegador |
 | 16 | 25/10/2026 | Parcela vinda da planilha: mostra o valor cheio da parcela e as faturas restantes, sem prévia de redivisão |
 | 15 | 24/10/2026 | Lançamentos: total da categoria filtrada ao lado do filtro |
 | 13 | 24/10/2026 | Busca por data (23/10, 23/10/2026) |

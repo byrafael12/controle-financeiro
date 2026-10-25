@@ -1,6 +1,14 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Finanças">
 <title>Controle Financeiro</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 16, 25/10/2026: parcela vinda da planilha mostra o valor cheio da parcela, sem prévia de redivisão. Publicado em https://claude.ai/artifact/ENKCnpGvmScrQUX8FY9P7k -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 17 (Entrega 5), 25/10/2026: dados no Supabase com login. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -324,9 +332,32 @@ select.filtro { width: auto; min-width: 170px; }
   .folha, .janela { animation: sobe .18s ease-out; }
   @keyframes sobe { from { transform: translateY(12px); opacity: .6; } to { transform: none; opacity: 1; } }
 }
+/* Qualquer elemento com o atributo hidden some (fora do claude.ai não há regra que faça isso) */
+[hidden] { display: none !important; }
+/* Tela de login */
+.login { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: var(--bg); }
+.login[hidden], .app[hidden] { display: none; }
+.login form { width: 100%; max-width: 360px; display: grid; gap: 14px; background: var(--surface); border: 1px solid var(--line, rgba(127,127,127,.25)); border-radius: 16px; padding: 24px; }
+.login h1 { margin: 0; font-size: 1.3rem; color: var(--fg); }
+.login label { display: grid; gap: 6px; font-size: .9rem; color: var(--muted); }
+.login input { font: inherit; font-size: 16px; padding: 12px; border-radius: 10px; border: 1px solid var(--line, rgba(127,127,127,.35)); background: var(--surface-2); color: var(--fg); }
+.login .erro { color: var(--despesa, #c0392b); min-height: 1.2em; margin: 0; font-size: .9rem; }
 </style>
+</head>
+<body>
 
-<div class="app">
+<div class="login" id="telaLogin" hidden>
+  <form id="formLogin" autocomplete="on">
+    <h1>Controle Financeiro</h1>
+    <span class="mudo">Entre com o seu e-mail e a sua senha.</span>
+    <label>E-mail<input type="email" id="loginEmail" name="email" autocomplete="username" required maxlength="120"></label>
+    <label>Senha<input type="password" id="loginSenha" name="password" autocomplete="current-password" required maxlength="200"></label>
+    <p class="erro" id="loginErro" role="alert"></p>
+    <button type="submit" class="botao primario" id="loginEntrar">Entrar</button>
+  </form>
+</div>
+
+<div class="app" id="app" hidden>
   <header class="topo">
     <div class="marca"><i aria-hidden="true"></i><span>Controle Financeiro</span></div>
     <div class="topo-direita"><div class="mes" role="group" aria-label="Mês">
@@ -356,7 +387,7 @@ select.filtro { width: auto; min-width: 170px; }
     <!-- Estado inicial: aparece enquanto o banco responde, ou se ele não estiver disponível -->
     <section id="estado" class="estado">
       <strong>Carregando seus lançamentos…</strong>
-      <span class="mudo">Os dados ficam numa área privada da sua conta Claude e aparecem iguais no iPhone e no Windows.</span>
+      <span class="mudo">Os dados ficam no Supabase, protegidos pelo seu login, e aparecem iguais no iPhone e no Windows.</span>
     </section>
 
     <!-- ===== Tela: Início (dashboard) ===== -->
@@ -481,7 +512,8 @@ select.filtro { width: auto; min-width: 170px; }
 
     <!-- ===== Tela: Ajustes ===== -->
     <section id="tela-ajustes" class="tela" hidden>
-      <div class="cabecalho-tela"><h1>Ajustes</h1></div>
+      <div class="cabecalho-tela"><h1>Ajustes</h1><button type="button" class="botao" id="botaoSair">Sair</button></div>
+      <p class="mudo" id="infoConta"></p>
       <div class="grade-ajustes">
         <div class="secao">
           <span class="rotulo">Categorias de despesa</span>
@@ -610,7 +642,273 @@ select.filtro { width: auto; min-width: 170px; }
 <div class="aviso" id="aviso" role="status" hidden><span id="avisoTexto"></span><button type="button" id="avisoDesfazer">Desfazer</button></div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
+/* =====================================================================
+   BANCO (Supabase)
+   Camada que traduz as chamadas do app (coleção, documento, filtro, escuta)
+   para as tabelas do Supabase. O resto do app não precisa saber onde os dados ficam.
+   - Nomes no app em camelCase; no banco em snake_case (mapa abaixo).
+   - Cada linha pertence ao usuário logado (user_id). A RLS do banco garante isso.
+   - "Escutar" = ler agora e ler de novo depois de qualquer gravação na mesma tabela,
+     e quando o app volta a ficar visível (dados lançados em outro aparelho).
+   ===================================================================== */
+const SUPABASE_URL = "https://vktqyguhdgawstlbvwkh.supabase.co";
+// Chave pública por definição (publishable): pode ficar no código. Quem protege os dados é a RLS.
+const SUPABASE_CHAVE_PUBLICA = "sb_publishable_lAcGjKk6Kn5Yo445pHIUVQ_PykVdfSQ";
+
+const MAPA_TABELAS = {
+  lancamentos: {
+    tabela: "lancamentos", chave: "id",
+    campos: {
+      tipo: "tipo", descricao: "descricao", valorCentavos: "valor_centavos", data: "data", competencia: "competencia",
+      categoriaId: "categoria_id", formaPagamento: "forma_pagamento", cartaoId: "cartao_id", status: "status",
+      parcela: "parcela", grupoParcela: "grupo_parcela", contaFixaId: "conta_fixa_id", reembolso: "reembolso",
+      reembolsoQuem: "reembolso_quem", reembolsoDe: "reembolso_de", observacao: "observacao", origem: "origem",
+      versaoEsquema: "versao_esquema", criadoEm: "criado_em", atualizadoEm: "atualizado_em"
+    }
+  },
+  categorias: { tabela: "categorias", chave: "id", campos: { tipo: "tipo", nome: "nome", cor: "cor", ordem: "ordem", ativa: "ativa" } },
+  cartoes: {
+    tabela: "cartoes", chave: "id",
+    campos: { nome: "nome", diaMelhorCompra: "dia_melhor_compra", diaVencimento: "dia_vencimento", ordem: "ordem", ativo: "ativo" }
+  },
+  contasFixas: {
+    tabela: "contas_fixas", chave: "id",
+    campos: {
+      descricao: "descricao", categoriaId: "categoria_id", formaPagamento: "forma_pagamento", cartaoId: "cartao_id",
+      diaVencimento: "dia_vencimento", valorEstimadoCentavos: "valor_estimado_centavos", ativa: "ativa"
+    }
+  },
+  orcamentos: { tabela: "orcamentos", chave: "categoria_id", campos: { valorPlanejadoCentavos: "valor_planejado_centavos" } },
+  geracoes: { tabela: "geracoes", chave: "mes", campos: { contas: "contas", atualizadoEm: "atualizado_em" } },
+  // Uma linha por usuário; no app é o documento "geral"
+  config: {
+    tabela: "config", chave: null,
+    campos: { fixasDesde: "fixas_desde", ultimoBackupBaixado: "ultimo_backup_baixado", versaoEsquema: "versao_esquema", criadoEm: "criado_em" }
+  }
+};
+
+const OPERADORES = { "==": "eq", ">=": "gte", "<=": "lte", ">": "gt", "<": "lt", "in": "in", "!=": "neq" };
+
+class ErroBanco extends Error {
+  constructor(erro) {
+    super((erro && erro.message) || "Erro no banco");
+    // Códigos que o app já entende para repetir a gravação
+    const status = erro && erro.status;
+    this.code = status === 429 ? "resource_exhausted" : (!status || status >= 500) ? "unavailable" : (erro && erro.code) || "erro";
+    this.detalhe = erro;
+  }
+}
+
+// "2026-02-31" não existe no banco: vira o último dia do mês (o app usa -31 como "até o fim do mês")
+function ajustarDataFiltro(valor) {
+  const m = typeof valor === "string" && /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor);
+  if (!m) return valor;
+  const ultimo = new Date(Date.UTC(Number(m[1]), Number(m[2]), 0)).getUTCDate();
+  return Number(m[3]) > ultimo ? m[1] + "-" + m[2] + "-" + String(ultimo).padStart(2, "0") : valor;
+}
+
+class Banco {
+  constructor(cliente, uid) {
+    this.cliente = cliente;
+    this.uid = uid;
+    this.ouvintes = new Map(); // tabela -> Set de funções que leem de novo
+    this.pendentes = new Map();
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") for (const nome of this.ouvintes.keys()) this.avisar(nome, 0);
+    });
+  }
+
+  mapa(nome) {
+    const m = MAPA_TABELAS[nome];
+    if (!m) throw new Error("Coleção desconhecida: " + nome);
+    return m;
+  }
+
+  // app -> banco
+  paraLinha(nome, id, dados) {
+    const m = this.mapa(nome);
+    const linha = { user_id: this.uid };
+    if (m.chave) linha[m.chave] = id;
+    for (const [campo, coluna] of Object.entries(m.campos)) {
+      // Campo ausente fica como está no banco (ou com o valor padrão, se a linha for nova)
+      if (campo in dados) linha[coluna] = dados[campo] === undefined ? null : dados[campo];
+    }
+    for (const campo of Object.keys(dados)) {
+      if (!(campo in m.campos) && campo !== "id") console.warn("Campo ignorado (não existe no banco):", nome, campo);
+    }
+    return linha;
+  }
+
+  // banco -> app
+  paraDoc(nome, linha) {
+    const m = this.mapa(nome);
+    const dados = {};
+    for (const [campo, coluna] of Object.entries(m.campos)) {
+      if (coluna in linha) dados[campo] = linha[coluna];
+    }
+    const id = m.chave ? linha[m.chave] : "geral";
+    return { id, exists: true, data: () => ({ ...dados }) };
+  }
+
+  avisar(nome, espera = 120) {
+    clearTimeout(this.pendentes.get(nome));
+    this.pendentes.set(nome, setTimeout(() => {
+      for (const ler of this.ouvintes.get(nome) || []) ler();
+    }, espera));
+  }
+
+  ouvir(nome, ler) {
+    if (!this.ouvintes.has(nome)) this.ouvintes.set(nome, new Set());
+    this.ouvintes.get(nome).add(ler);
+    return () => this.ouvintes.get(nome).delete(ler);
+  }
+
+  collection(nome) { return new Consulta(this, nome, [], null); }
+
+  // Grava muitos registros de uma vez (restauração e importação de backup)
+  async gravarVarios(nome, docs) {
+    const m = this.mapa(nome);
+    const linhas = docs.map(({ id, ...corpo }) => this.paraLinha(nome, id, corpo));
+    const conflito = m.chave ? "user_id," + m.chave : "user_id";
+    for (let i = 0; i < linhas.length; i += 300) {
+      const { error } = await this.cliente.from(m.tabela)
+        .upsert(linhas.slice(i, i + 300), { onConflict: conflito, defaultToNull: false });
+      if (error) throw new ErroBanco(error);
+    }
+    this.avisar(nome);
+  }
+
+  async apagarVarios(nome, ids) {
+    const m = this.mapa(nome);
+    for (let i = 0; i < ids.length; i += 200) {
+      let q = this.cliente.from(m.tabela).delete().eq("user_id", this.uid);
+      if (m.chave) q = q.in(m.chave, ids.slice(i, i + 200));
+      const { error } = await q;
+      if (error) throw new ErroBanco(error);
+    }
+    this.avisar(nome);
+  }
+}
+
+class Consulta {
+  constructor(banco, nome, filtros, limite) {
+    this.banco = banco;
+    this.nome = nome;
+    this.filtros = filtros;
+    this.limite = limite;
+  }
+
+  where(campo, op, valor) {
+    const m = this.banco.mapa(this.nome);
+    const coluna = m.campos[campo] || (campo === "id" ? m.chave : null);
+    if (!coluna || !OPERADORES[op]) throw new Error("Filtro não suportado: " + campo + " " + op);
+    const v = coluna === "data" ? (Array.isArray(valor) ? valor.map(ajustarDataFiltro) : ajustarDataFiltro(valor)) : valor;
+    return new Consulta(this.banco, this.nome, this.filtros.concat([[coluna, OPERADORES[op], v]]), this.limite);
+  }
+
+  limit(n) { return new Consulta(this.banco, this.nome, this.filtros, n); }
+
+  doc(id) { return new Documento(this.banco, this.nome, id); }
+
+  async get() {
+    const m = this.banco.mapa(this.nome);
+    const docs = [];
+    const maximo = this.limite || 100000;
+    const pagina = 1000; // o Supabase devolve no máximo 1000 linhas por pedido
+    for (let inicio = 0; inicio < maximo; inicio += pagina) {
+      let q = this.banco.cliente.from(m.tabela).select("*").eq("user_id", this.banco.uid);
+      for (const [coluna, op, valor] of this.filtros) q = q[op](coluna, valor);
+      if (m.chave) q = q.order(m.chave);
+      const fim = Math.min(inicio + pagina, maximo) - 1;
+      const { data, error } = await q.range(inicio, fim);
+      if (error) throw new ErroBanco(error);
+      for (const linha of data) docs.push(this.banco.paraDoc(this.nome, linha));
+      if (data.length < fim - inicio + 1) break;
+    }
+    return { docs, size: docs.length, empty: docs.length === 0 };
+  }
+
+  onSnapshot(aoLer, aoErrar) {
+    let ativo = true;
+    let versao = 0;
+    const ler = async () => {
+      const minha = ++versao;
+      try {
+        const foto = await this.get();
+        if (ativo && minha === versao) aoLer(foto);
+      } catch (erro) {
+        console.error(erro);
+        if (ativo && aoErrar) aoErrar(erro);
+      }
+    };
+    const desligar = this.banco.ouvir(this.nome, ler);
+    ler();
+    return () => { ativo = false; desligar(); };
+  }
+}
+
+class Documento {
+  constructor(banco, nome, id) {
+    this.banco = banco;
+    this.nome = nome;
+    this.id = id;
+  }
+
+  filtrar(q) {
+    const m = this.banco.mapa(this.nome);
+    q = q.eq("user_id", this.banco.uid);
+    return m.chave ? q.eq(m.chave, this.id) : q;
+  }
+
+  async get() {
+    const m = this.banco.mapa(this.nome);
+    const { data, error } = await this.filtrar(this.banco.cliente.from(m.tabela).select("*")).maybeSingle();
+    if (error) throw new ErroBanco(error);
+    return data ? this.banco.paraDoc(this.nome, data) : { id: this.id, exists: false, data: () => undefined };
+  }
+
+  // Grava o documento inteiro (cria ou substitui)
+  async set(dados) {
+    const m = this.banco.mapa(this.nome);
+    const linha = this.banco.paraLinha(this.nome, this.id, dados);
+    const { error } = await this.banco.cliente.from(m.tabela)
+      .upsert(linha, { onConflict: m.chave ? "user_id," + m.chave : "user_id", defaultToNull: false });
+    if (error) throw new ErroBanco(error);
+    this.banco.avisar(this.nome);
+  }
+
+  // Altera só os campos informados
+  async update(dados) {
+    const m = this.banco.mapa(this.nome);
+    const linha = this.banco.paraLinha(this.nome, this.id, dados);
+    delete linha.user_id;
+    if (m.chave) delete linha[m.chave];
+    const { error } = await this.filtrar(this.banco.cliente.from(m.tabela).update(linha));
+    if (error) throw new ErroBanco(error);
+    this.banco.avisar(this.nome);
+  }
+
+  async delete() {
+    const m = this.banco.mapa(this.nome);
+    const { error } = await this.filtrar(this.banco.cliente.from(m.tabela).delete());
+    if (error) throw new ErroBanco(error);
+    this.banco.avisar(this.nome);
+  }
+
+  onSnapshot(aoLer, aoErrar) {
+    let ativo = true;
+    const ler = async () => {
+      try { const foto = await this.get(); if (ativo) aoLer(foto); } catch (erro) { console.error(erro); if (ativo && aoErrar) aoErrar(erro); }
+    };
+    const desligar = this.banco.ouvir(this.nome, ler);
+    ler();
+    return () => { ativo = false; desligar(); };
+  }
+}
+
+
 "use strict";
 
 /* =====================================================================
@@ -1075,6 +1373,7 @@ function lancamentosDoMes() {
 // Redesenha a tela atual a partir do estado
 function desenhar() {
   if (!estado.carregouCategorias || !estado.carregouLancamentos || !estado.carregouCartoes || !estado.carregouFixas) return;
+  if (estado.categorias.length === 0 && estado.restaurandoPrimeiro) return;
   if (estado.categorias.length === 0) {
     const botao = document.createElement("button");
     botao.className = "botao primario";
@@ -1085,7 +1384,19 @@ function desenhar() {
       const ok = await gravarComSeguranca(criarCategoriasIniciais, "Não consegui criar as categorias.");
       if (!ok) { botao.disabled = false; botao.textContent = "Criar categorias iniciais"; }
     });
-    mostrarEstado("Primeiro acesso", "Crie as categorias iniciais (as mesmas da sua planilha). Depois você pode renomear, trocar cores e adicionar outras em Ajustes.", botao);
+    const restaurar = document.createElement("button");
+    restaurar.className = "botao";
+    restaurar.textContent = "Restaurar um backup";
+    restaurar.addEventListener("click", () => {
+      estado.restaurandoPrimeiro = true;
+      $("estado").hidden = true;
+      document.querySelectorAll(".tela").forEach(t => { t.hidden = t.id !== "tela-ajustes"; });
+      $("arquivoBackup").click();
+    });
+    const acoes = document.createElement("div");
+    acoes.className = "acoes";
+    acoes.append(restaurar, botao);
+    mostrarEstado("Primeiro acesso", "Banco novo e vazio. Se você tem um backup do app (arquivo .json), restaure primeiro. Se não, crie as categorias iniciais.", acoes);
     return;
   }
   $("estado").hidden = true;
@@ -2145,43 +2456,45 @@ async function gravarEmLote(tarefas, aoAvancar) {
 /* ---------- Cópia automática semanal dentro do banco ---------- */
 // Toda semana (ao abrir o app) guarda uma cópia completa: ficam as 4 últimas semanais e as 12 últimas mensais.
 // A cópia é dividida em partes (uma por mês de lançamentos) por causa do limite de tamanho de cada registro.
-function colecaoBackups() { return estado.raiz.collection("backups"); }
-
+// Cada cópia é uma linha da tabela "backups", com o backup completo em "dados".
 async function salvarCopiaNoBanco(tipo) {
   const dados = await lerTudo();
   const id = new Date().toISOString().replace(/[:.]/g, "-");
-  const partes = { meta: { colecoes: Object.fromEntries(COLECOES_BACKUP.map(n => [n, dados.colecoes[n]])) } };
-  for (const l of dados.colecoes.lancamentos) {
-    const chave = "L-" + (l.competencia || "sem");
-    if (!partes[chave]) partes[chave] = { lancamentos: [] };
-    partes[chave].lancamentos.push(l);
-  }
-  const ref = colecaoBackups().doc(id);
-  await gravarEmLote(Object.entries(partes).map(([chave, conteudo]) => () => ref.collection("partes").doc(chave).set(conteudo)));
-  await ref.set({ tipo, criadoEm: dados.geradoEm, partes: Object.keys(partes), totalLancamentos: dados.colecoes.lancamentos.length, versaoEsquema: VERSAO_ESQUEMA });
+  const { error } = await estado.banco.cliente.from("backups").insert({
+    user_id: estado.banco.uid, id, tipo, gerado_em: dados.geradoEm, dados: { ...dados, totalLancamentos: dados.colecoes.lancamentos.length }
+  });
+  if (error) throw new ErroBanco(error);
   return id;
 }
 
-async function apagarCopia(id, partes) {
-  const ref = colecaoBackups().doc(id);
-  await gravarEmLote((partes || []).map(p => () => ref.collection("partes").doc(p).delete()));
-  await ref.delete();
+async function listarCopias() {
+  const { data, error } = await estado.banco.cliente.from("backups")
+    .select("id, tipo, gerado_em, total:dados->totalLancamentos").eq("user_id", estado.banco.uid)
+    .order("gerado_em", { ascending: false }).limit(200);
+  if (error) throw new ErroBanco(error);
+  return data.map(c => ({ id: c.id, tipo: c.tipo, criadoEm: c.gerado_em, totalLancamentos: c.total }));
+}
+
+async function apagarCopia(id) {
+  const { error } = await estado.banco.cliente.from("backups").delete().eq("user_id", estado.banco.uid).eq("id", id);
+  if (error) throw new ErroBanco(error);
 }
 
 async function copiaAutomaticaSemanal() {
   try {
-    const foto = await colecaoBackups().limit(200).get();
-    const copias = foto.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+    const copias = await listarCopias();
     estado.copias = copias;
     const ultima = copias.find(c => c.tipo === "semanal" || c.tipo === "mensal");
     const seteDias = 7 * 24 * 3600 * 1000;
     if (ultima && Date.now() - Date.parse(ultima.criadoEm) < seteDias) { desenharBackupInfo(); return; }
     const jaTemMensal = copias.some(c => c.tipo === "mensal" && c.criadoEm.slice(0, 7) === new Date().toISOString().slice(0, 7));
     await salvarCopiaNoBanco(jaTemMensal ? "semanal" : "mensal");
-    // Rotação: apaga as mais antigas
-    const novas = (await colecaoBackups().limit(200).get()).docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
-    const sobra = novas.filter(c => c.tipo === "semanal").slice(4).concat(novas.filter(c => c.tipo === "mensal").slice(12));
-    for (const c of sobra) await apagarCopia(c.id, c.partes);
+    // Rotação: ficam as 4 últimas semanais, as 12 últimas mensais e as 3 últimas de antes de restaurar
+    const novas = await listarCopias();
+    const sobra = novas.filter(c => c.tipo === "semanal").slice(4)
+      .concat(novas.filter(c => c.tipo === "mensal").slice(12))
+      .concat(novas.filter(c => c.tipo === "antes-restauracao").slice(3));
+    for (const c of sobra) await apagarCopia(c.id);
     estado.copias = novas.filter(c => !sobra.includes(c));
     desenharBackupInfo();
   } catch (erro) {
@@ -2204,14 +2517,20 @@ function desenharBackupInfo() {
 
 /* ---------- Download (backup JSON e CSV) ---------- */
 async function baixarArquivo(nome, conteudo) {
-  const downloads = await window.claude.use("downloads");
-  if (!downloads) { mostrarAviso("Este aparelho não permite baixar arquivos pelo app. Tente pelo navegador no Windows.", null); return false; }
   try {
-    await downloads.save({ filename: nome, data: conteudo });
+    const tipo = nome.endsWith(".csv") ? "text/csv;charset=utf-8" : "application/json";
+    const url = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = nome;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
     return true;
   } catch (erro) {
-    if (erro && erro.code === "declined") mostrarAviso("Download cancelado.", null);
-    else mostrarAviso("Não consegui gerar o arquivo. Código: " + (erro && erro.code), null);
+    console.error(erro);
+    mostrarAviso("Não consegui gerar o arquivo. Tente de novo.", null);
     return false;
   }
 }
@@ -2331,28 +2650,31 @@ async function aplicarBackup(substituir) {
   try {
     progresso.textContent = "Guardando uma cópia do estado atual…";
     await salvarCopiaNoBanco("antes-restauracao");
-    const tarefas = [];
     const nomes = ["categorias", "cartoes", "contasFixas", "orcamentos", "geracoes", "config", "lancamentos"];
+    let total = 0;
     if (substituir) {
+      progresso.textContent = "Conferindo o que sai…";
       const atual = await lerTudo();
       for (const nome of nomes) {
+        if (nome === "config") continue;
         const manter = new Set((dados.colecoes[nome] || []).map(d => d.id));
-        for (const doc of atual.colecoes[nome] || []) {
-          if (!manter.has(doc.id)) tarefas.push(() => estado.raiz.collection(nome).doc(doc.id).delete());
-        }
+        const apagar = (atual.colecoes[nome] || []).filter(d => !manter.has(d.id)).map(d => d.id);
+        if (apagar.length) await estado.banco.apagarVarios(nome, apagar);
+        total += apagar.length;
       }
     }
     for (const nome of nomes) {
-      for (const doc of dados.colecoes[nome] || []) {
-        if (!doc || typeof doc.id !== "string") continue;
-        const { id, ...corpo } = doc;
-        tarefas.push(() => estado.raiz.collection(nome).doc(id).set(corpo));
-      }
+      const docs = (dados.colecoes[nome] || []).filter(d => d && typeof d.id === "string");
+      if (!docs.length) continue;
+      progresso.textContent = "Gravando " + nome + " (" + docs.length + ")…";
+      await estado.banco.gravarVarios(nome, docs);
+      total += docs.length;
     }
-    await gravarEmLote(tarefas, (feitas, total) => { progresso.textContent = "Gravando " + feitas + " de " + total + "…"; });
+    const tarefas = { length: total };
     progresso.textContent = "Concluído: " + tarefas.length + " registros gravados.";
     mostrarAviso(substituir ? "Backup restaurado." : "Backup mesclado.", null);
     estado.backupLido = null;
+    estado.restaurandoPrimeiro = false;
     $("arquivoBackup").value = "";
     estado.mesesGerados.clear();
     mudarMes(estado.mes);
@@ -2654,19 +2976,50 @@ async function iniciar() {
   ligarEventos();
   restaurarPosicaoBotao();
 
-  const claude = window.claude;
-  if (!claude || typeof claude.use !== "function") {
-    mostrarEstado("Abra pelo claude.ai", "Este app guarda os dados na sua conta Claude. Abra o link do artefato no app Claude ou no navegador, com a sua conta conectada.");
+  if (!window.supabase || typeof window.supabase.createClient !== "function") {
+    mostrarEstado("Sem conexão", "Não consegui carregar o app. Verifique a internet e recarregue a página.");
     return;
   }
-  const [db, usuario] = await Promise.all([claude.use("db"), claude.use("user")]);
-  const uid = usuario ? await usuario.id() : null;
-  if (!db || !uid) {
-    mostrarEstado("Entre na sua conta Claude", "O banco de dados só funciona com a sua conta conectada. Abra o link no app Claude ou no navegador com login feito.");
-    return;
-  }
-  estado.db = db;
-  estado.raiz = db.doc("data/users/" + uid + "/app");
+  const cliente = window.supabase.createClient(SUPABASE_URL, SUPABASE_CHAVE_PUBLICA, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+  });
+  estado.cliente = cliente;
+  $("botaoSair").addEventListener("click", async () => { await cliente.auth.signOut(); location.reload(); });
+  const { data } = await cliente.auth.getSession();
+  if (data && data.session) { abrirApp(data.session); return; }
+  pedirLogin();
+}
+
+function pedirLogin() {
+  $("app").hidden = true;
+  $("telaLogin").hidden = false;
+  $("loginEmail").focus();
+  $("formLogin").onsubmit = async e => {
+    e.preventDefault();
+    const botao = $("loginEntrar");
+    botao.disabled = true;
+    $("loginErro").textContent = "";
+    const { data, error } = await estado.cliente.auth.signInWithPassword({
+      email: $("loginEmail").value.trim(), password: $("loginSenha").value
+    });
+    botao.disabled = false;
+    if (error) {
+      $("loginErro").textContent = error.status === 400 ? "E-mail ou senha incorretos." :
+        error.status === 429 ? "Muitas tentativas. Espere alguns minutos." : "Não consegui entrar. Verifique a conexão.";
+      return;
+    }
+    $("loginSenha").value = "";
+    abrirApp(data.session);
+  };
+}
+
+function abrirApp(sessao) {
+  $("telaLogin").hidden = true;
+  $("app").hidden = false;
+  estado.cliente.auth.onAuthStateChange(evento => { if (evento === "SIGNED_OUT") location.reload(); });
+  estado.banco = new Banco(estado.cliente, sessao.user.id);
+  estado.raiz = estado.banco;
+  $("infoConta").textContent = "Conectado como " + sessao.user.email + ".";
   escutarCategorias();
   escutarCartoes();
   escutarFixas();
@@ -2682,3 +3035,5 @@ async function iniciar() {
 
 iniciar();
 </script>
+</body>
+</html>
