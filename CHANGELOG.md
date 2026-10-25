@@ -2,6 +2,7 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 16 | 25/10/2026 | Parcela vinda da planilha: mostra o valor cheio da parcela e as faturas restantes, sem prévia de redivisão |
 | 15 | 24/10/2026 | Lançamentos: total da categoria filtrada ao lado do filtro |
 | 13 | 24/10/2026 | Busca por data (23/10, 23/10/2026) |
 | 11 | 24/10/2026 | Busca por valor (159,90 exato; 159 por reais) e sem diferenciar acentos |

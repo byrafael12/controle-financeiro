@@ -1,6 +1,6 @@
 <title>Controle Financeiro</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 15, 24/10/2026: total da categoria filtrada em Lançamentos. Publicado em https://claude.ai/artifact/ENKCnpGvmScrQUX8FY9P7k -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 16, 25/10/2026: parcela vinda da planilha mostra o valor cheio da parcela, sem prévia de redivisão. Publicado em https://claude.ai/artifact/ENKCnpGvmScrQUX8FY9P7k -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -1349,8 +1349,14 @@ function atualizarBlocoCredito() {
   $("blocoCredito").hidden = !credito;
   // Conta fixa não é parcelada: some o campo de parcelas
   $("fParcelas").closest(".campo").hidden = Boolean(form.editando && (form.editando.contaFixaId || ehParcelaImportada(form.editando)));
-  $("rotuloValor").textContent = credito && Number($("fParcelas").value) > 1 ? "Valor total da compra" : "Valor";
+  $("rotuloValor").textContent = credito && parcelasDoForm() > 1 ? "Valor total da compra" : ehParcelaImportada(form.editando) ? "Valor desta parcela" : "Valor";
   atualizarPrevia();
+}
+
+// Só compra nova (ou parcelada lançada no app) é dividida. Parcela vinda da planilha e conta fixa valem 1.
+function parcelasDoForm() {
+  if (form.editando && (form.editando.contaFixaId || ehParcelaImportada(form.editando))) return 1;
+  return Math.max(1, Math.min(48, Number($("fParcelas").value) || 1));
 }
 
 function atualizarPrevia() {
@@ -1360,7 +1366,17 @@ function atualizarPrevia() {
   const cartao = cartaoPorId($("fCartao").value);
   const data = $("fData").value;
   if (!cartao || !/^\d{4}-\d{2}-\d{2}$/.test(data)) { alvo.textContent = "Escolha o cartão para ver em que fatura a compra cai."; return; }
-  const n = Math.max(1, Math.min(48, Number($("fParcelas").value) || 1));
+  const imp = ehParcelaImportada(form.editando) ? form.editando.parcela : null;
+  if (imp) {
+    // Parcela de compra em andamento: valor cheio por mês, sem redividir
+    const mesFatura = competenciaCartao(data, cartao);
+    const restantes = imp.total - imp.numero;
+    alvo.textContent = "Parcela " + imp.numero + " de " + imp.total + " na fatura de " + rotuloMes(mesFatura) +
+      ", que vence em " + formatarDataCurta(dataVencimento(mesFatura, cartao)) + ". Cada parcela é cobrada pelo valor cheio, sem redividir" +
+      (restantes > 0 ? ": faltam mais " + restantes + ", até a fatura de " + rotuloMes(somarMeses(mesFatura, restantes)) + "." : ". É a última parcela.");
+    return;
+  }
+  const n = parcelasDoForm();
   const primeira = competenciaCartao(data, cartao);
   const vence = dataVencimento(primeira, cartao);
   let texto = (n > 1 ? "1ª parcela na fatura de " : "Cai na fatura de ") + rotuloMes(primeira) + ", que vence em " + formatarDataCurta(vence) + ".";
