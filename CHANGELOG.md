@@ -2,6 +2,7 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 21 | 27/10/2026 | Redesenho, etapa 2: novo Início com "Livre para gastar" (saldo do mês), ritmo do mês contra o orçado, linha do que já está na próxima fatura, Receitas, Despesas, Saldo e A receber com variação sobre o mês anterior, Onde mais gastei, Próximos 15 dias e pendências; aviso de mês de transição recolhido; contas fixas em lista (uma linha por conta, com a situação do mês) e edição numa folha com Salvar, Desativar e Nova conta fixa |
 | 20 | 27/10/2026 | Redesenho, etapa 1: barra com Início, Lançamentos, + no centro, Análise e Planejar (no notebook, menu lateral com "Novo lançamento" no topo); gráficos na nova tela Análise; Ajustes pelo ícone do topo no celular; lista sem texto sobre o valor; nomes inteiros em Ajustes; compras no crédito sem cartão anteriores a 01/10/2026 tratadas como histórico; sai o + arrastável |
 | 19 | 26/10/2026 | Entrega 6: funciona sem internet. Abre pelo atalho da tela de início (service worker, manifesto e ícone), mostra os dados guardados no aparelho, lançamentos novos ficam na fila "aguardando envio" e sobem sozinhos quando a conexão volta; editar, excluir, backup e restauração exigem conexão |
 | 18 | 25/10/2026 | Entrega 5.8: verificação em duas etapas (Google Authenticator) exigida também pelo banco, esqueci a senha, olho na senha, regra de senha forte, CSP, bibliotecas servidas pelo próprio site, bloqueio em iframe |

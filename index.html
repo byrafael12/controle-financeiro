@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-ZSIoV5uu3K6/0QaewCAc3TeCCB8hmClRVfbSAvPajx4='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-xANHn/JlSi1iqa0p+kHxKsAda/q7iR8hGJQoQdG1BfM='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 20 (redesenho, etapa 1), 27/10/2026: nova navegação com o + no centro, telas Análise e Planejar, lista e Ajustes sem textos cortados. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 21 (redesenho, etapa 2), 27/10/2026: novo Início (livre para gastar, ritmo do mês, onde mais gastei, próximos 15 dias) e contas fixas em lista com edição ao tocar. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -371,6 +371,73 @@ main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom
 .cat .botao.texto { padding: 0 6px; font-size: 14px; }
 #listaOrcamento .cat { grid-template-columns: 22px minmax(0, 1fr) auto; }
 #listaOrcamento .cat input.orc-valor { width: 132px; flex: none; padding-inline: 6px; }
+/* ===== Redesenho, etapa 2 (v21) ===== */
+.grade-inicio { display: grid; gap: 14px; margin-bottom: 14px; min-width: 0; }
+@media (min-width: 900px) { .grade-inicio { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
+.heroi { background: var(--accent); color: var(--accent-fg); border: 0; display: grid; gap: 14px; }
+.heroi .rotulo { color: inherit; opacity: .85; }
+.heroi-topo { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.heroi .grande { font-size: 38px; font-weight: 700; line-height: 1.05; letter-spacing: -.02em; }
+.heroi .sub { font-size: 14px; opacity: .92; margin-top: 4px; }
+.pilula { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 10px; font-size: 13px; font-weight: 600; background: color-mix(in srgb, var(--accent-fg) 18%, transparent); }
+.ritmo { display: grid; gap: 6px; }
+.ritmo-barra { position: relative; height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--accent-fg) 24%, transparent); }
+.ritmo-barra i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--accent-fg); }
+.ritmo-barra b { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1px; border-radius: 2px; background: var(--accent-fg); opacity: .75; }
+.ritmo-legenda { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 13px; opacity: .92; }
+.heroi .extra { font-size: 13px; opacity: .92; border-top: 1px solid color-mix(in srgb, var(--accent-fg) 25%, transparent); padding-top: 10px; }
+.trio { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-content: start; }
+.mini { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 3px; align-content: start; min-width: 0; }
+.mini .v { font-size: 19px; font-weight: 700; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.mini .d { font-size: 12.5px; color: var(--muted); }
+.pend-inicio { width: 100%; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); background: var(--accent-soft); color: var(--fg); border-radius: 12px; padding: 10px 14px; min-height: 52px; text-align: left; margin-bottom: 14px; }
+.pend-inicio .qtd { background: var(--despesa); color: var(--surface); border-radius: 999px; min-width: 28px; height: 28px; display: grid; place-items: center; font-weight: 700; font-size: 13px; padding: 0 8px; }
+.pend-inicio > span:nth-child(2) { flex: 1; font-size: 14px; }
+.aviso-transicao { background: var(--surface-2); border-radius: 12px; padding: 10px 14px; font-size: 13.5px; color: var(--muted); margin-bottom: 14px; }
+.aviso-transicao summary { cursor: pointer; min-height: 24px; }
+.aviso-transicao b { color: var(--fg); }
+.aviso-transicao p { margin: 8px 0 0; }
+.cartao-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+.cartao-topo .botao.texto { min-height: 44px; }
+.hbars { display: grid; gap: 8px; }
+.hb { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; border: 0; background: none; text-align: left; padding: 4px 0; border-radius: 8px; width: 100%; }
+.hb-nome { font-size: 14px; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hb-nome span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ponto { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
+.hb-valor { font-size: 14px; font-weight: 600; }
+.hb-trilho { grid-column: 1 / -1; position: relative; height: 8px; background: var(--surface-2); border-radius: 999px; }
+.hb-trilho i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--previsto); border-radius: 999px; }
+.hb:hover .hb-trilho i { background: var(--accent); }
+.hb-meta { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.venc-l { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.venc-l:first-child { border-top: 0; }
+.dia-caixa { display: grid; justify-items: center; background: var(--surface-2); border-radius: 10px; padding: 4px 0; line-height: 1.1; }
+.dia-caixa b { font-size: 17px; }
+.dia-caixa small { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+.venc-t { display: grid; min-width: 0; }
+.venc-n { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.venc-t small { font-size: 12px; color: var(--muted); }
+.venc-v { font-weight: 600; white-space: nowrap; }
+/* Contas fixas: uma linha por conta, edição ao tocar */
+.lista-fixas { background: var(--surface); border: 1px solid var(--line); border-radius: var(--raio); overflow: hidden; }
+.fixa-item { width: 100%; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto 12px; gap: 12px; align-items: center; padding: 10px 14px; border: 0; border-top: 1px solid var(--line); background: transparent; text-align: left; min-height: 64px; }
+.fixa-item:first-child { border-top: 0; }
+.fixa-item:hover { background: var(--surface-2); }
+.fixa-item.inativa { opacity: .6; }
+.fixa-t { display: grid; min-width: 0; }
+.fixa-n { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fixa-t small { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fixa-v { display: grid; justify-items: end; font-weight: 700; white-space: nowrap; }
+.fixa-v .sit { font-size: 11.5px; font-weight: 600; }
+.sit.paga { color: var(--receita); }
+.sit.prev, .sit.sem, .sit.inativa { color: var(--muted); }
+.fixa-item .seta { color: var(--muted); font-size: 18px; }
+#novaFixa { justify-self: start; }
+.form-fixa { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-fixa label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); min-width: 0; }
+.form-fixa input, .form-fixa select { min-height: 44px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 10px; width: 100%; }
+.form-fixa .largo { grid-column: 1 / -1; }
+.form-fixa .botao.primario { min-height: 50px; }
 /* Tela de login */
 .login { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: var(--bg); }
 .login[hidden], .app[hidden] { display: none; }
@@ -521,15 +588,28 @@ main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom
           <label class="interruptor"><input type="checkbox" id="comKms" checked> Incluir Paytrack KMs</label>
         </div>
       </div>
-      <div class="indicadores">
-        <div class="cartao indicador"><span class="rotulo">Receitas</span><span class="valor num receita" id="kReceitas">R$ 0,00</span><span class="detalhe" id="kReceitasDet">&nbsp;</span></div>
-        <div class="cartao indicador"><span class="rotulo">Despesas</span><span class="valor num despesa" id="kDespesas">R$ 0,00</span><span class="detalhe" id="kDespesasDet">&nbsp;</span></div>
-        <div class="cartao indicador saldo"><span class="rotulo">Saldo</span><span class="valor num" id="kSaldo">R$ 0,00</span><span class="detalhe" id="kGuardado">&nbsp;</span></div>
-        <div class="cartao indicador"><span class="rotulo">Despesas x média</span><span class="valor num" id="kVariacao">—</span><span class="detalhe" id="kVariacaoDet">&nbsp;</span></div>
-        <div class="cartao indicador receber"><span class="rotulo">A receber</span><span class="valor num" id="kReceber">R$ 0,00</span><span class="detalhe" id="kReceberDet">&nbsp;</span></div>
+      <button type="button" class="pend-inicio" id="pendInicio" hidden></button>
+      <div class="grade-inicio">
+        <div class="cartao heroi" id="heroi"></div>
+        <div class="trio">
+          <div class="mini"><span class="rotulo">Receitas</span><span class="v num receita" id="kReceitas">R$ 0,00</span><span class="d num" id="kReceitasDet">&nbsp;</span></div>
+          <div class="mini"><span class="rotulo">Despesas</span><span class="v num despesa" id="kDespesas">R$ 0,00</span><span class="d num" id="kDespesasDet">&nbsp;</span></div>
+          <div class="mini"><span class="rotulo">Saldo</span><span class="v num" id="kSaldo">R$ 0,00</span><span class="d num" id="kGuardado">&nbsp;</span></div>
+          <div class="mini"><span class="rotulo">A receber</span><span class="v num" id="kReceber">R$ 0,00</span><span class="d num" id="kReceberDet">&nbsp;</span></div>
+        </div>
       </div>
       <div class="lembrete" id="lembreteBackup" hidden><span>O backup deste mês ainda não foi baixado. Guarde uma cópia no Google Drive.</span><button type="button" class="botao" id="irBackup">Ir para o backup</button></div>
-      <div class="lembrete" id="avisoTransicao" hidden><span>Mês de transição: as compras no crédito da fatura que venceu em outubro já estão em setembro (histórico pela data da compra), e as de outubro caem em novembro (regra da fatura). Por isso outubro aparece abaixo do real. Para ver o que foi comprado no mês, use Lançamentos &gt; Ver por: Data da compra.</span></div>
+      <details class="aviso-transicao" id="avisoTransicao" hidden><summary><b>Mês de transição da fatura.</b> Toque para entender por que outubro parece menor.</summary><p>As compras no crédito da fatura que venceu em outubro já estão em setembro (histórico pela data da compra), e as de outubro caem em novembro (regra da fatura). Por isso outubro aparece abaixo do real, e a comparação com o ritmo e com a média fica oculta neste mês. Para ver o que foi comprado no mês, use Lançamentos &gt; Ver por: Data da compra.</p></details>
+      <div class="grade-inicio">
+        <div class="cartao">
+          <div class="cartao-topo"><h2>Onde mais gastei</h2><button type="button" class="botao texto" id="irAnalise">Ver análise</button></div>
+          <div class="hbars" id="topCategorias"></div>
+        </div>
+        <div class="cartao" id="cartaoProximos">
+          <div class="cartao-topo"><h2>Próximos 15 dias</h2><button type="button" class="botao texto" id="irPlanejar">Ver tudo</button></div>
+          <div class="venc" id="proximos"></div>
+        </div>
+      </div>
     </section>
 
     <!-- ===== Tela: Análise ===== -->
@@ -611,8 +691,9 @@ main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom
       </div>
       <div class="secao">
         <span class="rotulo">Contas fixas</span>
-        <div class="faturas" id="listaFixas"></div>
-        <form class="faturas" id="formNovaFixa">
+        <div class="lista-fixas" id="listaFixas"></div>
+        <button type="button" class="botao" id="novaFixa">+ Nova conta fixa</button>
+        <form class="faturas" id="formNovaFixa" hidden>
           <div class="fixa-linha">
             <label>Nova conta fixa<input type="text" id="nfDescricao" maxlength="40" placeholder="Ex.: Unimed"></label>
             <label>Dia<input type="number" id="nfDia" inputmode="numeric" min="1" max="31"></label>
@@ -687,7 +768,7 @@ main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 20 (redesenho, etapa 1): lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 21 (redesenho, etapa 2): lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -700,6 +781,24 @@ main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom
   <button type="button" class="fab" id="botaoNovo" aria-label="Novo lançamento" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
   </button>
+</div>
+
+<!-- Conta fixa: edição em folha (v21) -->
+<div class="fundo" id="fundoFixa" hidden>
+  <div class="folha" role="dialog" aria-modal="true" aria-labelledby="tituloFixa">
+    <div class="folha-topo"><h2 id="tituloFixa">Editar conta fixa</h2><button type="button" class="botao texto" id="fecharFixa">Fechar</button></div>
+    <form id="formFixa" class="form-fixa" novalidate>
+      <label class="largo">Conta<input type="text" id="fxDescricao" maxlength="40" autocomplete="off"></label>
+      <label>Dia<input type="number" id="fxDia" inputmode="numeric" min="1" max="31"></label>
+      <label>Valor médio<input type="text" id="fxValor" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
+      <label>Pagamento<select id="fxForma"></select></label>
+      <label id="fxCartaoCampo">Cartão<select id="fxCartao"></select></label>
+      <label class="largo">Categoria<select id="fxCategoria"></select></label>
+      <p class="dica largo">O valor é uma média e o dia é só referência. Mudanças valem para os próximos meses.</p>
+      <button type="submit" class="botao primario largo" id="fxSalvar">Salvar</button>
+      <button type="button" class="botao texto largo" id="fxAlternar">Desativar conta</button>
+    </form>
+  </div>
 </div>
 
 <!-- Formulário de lançamento (abre como folha) -->
@@ -1782,43 +1881,110 @@ function desenhar() {
 /* ---------- Início ---------- */
 function desenharInicio() {
   const doMes = lancamentosDoMes();
-  const t = totais(doMes, { incluirKms: estado.incluirKms, pessoal: estado.pessoal });
+  const opc = { incluirKms: estado.incluirKms, pessoal: estado.pessoal };
+  const t = totais(doMes, opc);
+  const hoje = dataDeHoje(), mesHoje = competenciaDeHoje();
+  const atual = estado.mes === mesHoje, passado = estado.mes < mesHoje, transicao = estado.mes === "2026-10";
+  const nomeMes = c => new Intl.DateTimeFormat("pt-BR", { month: "long", timeZone: "UTC" }).format(new Date(c + "-01T00:00:00Z"));
+  const nome = nomeMes(estado.mes);
+  const { lista } = orcamentosDoMes();
+  const orcado = Object.values(lista).reduce((a, o) => a + o.plano, 0);
+  const usado = orcado ? t.despesas / orcado : 0;
+  const diasMes = diasNoMes(estado.mes), diaHoje = Number(hoje.slice(8, 10));
+  const esperado = atual ? diaHoje / diasMes : 1;
+  let pilula = "";
+  if (transicao) pilula = "Mês de transição";
+  else if (atual && orcado) pilula = usado > esperado + 0.03 ? "Acima do ritmo" : usado < esperado - 0.1 ? "Abaixo do ritmo" : "No ritmo";
+  else if (passado && orcado) pilula = usado > 1 ? "Passou do orçado" : "Dentro do orçado";
+  else if (!passado && !atual) pilula = "Previsão";
+  const titulo = atual ? "Livre para gastar em " + nome : passado ? "Sobrou em " + nome : "Previsto para " + nome;
+  const diasRest = diasMes - diaHoje + 1;
+  const sub = atual
+    ? (t.saldo > 0 ? "Até " + diasMes + "/" + estado.mes.slice(5) + ", cerca de " + formatarReais(Math.round(t.saldo / diasRest)) + " por dia" : "As despesas passaram as receitas em " + formatarReais(Math.abs(t.saldo)))
+    : "Receitas " + formatarReais(t.receitas) + " menos despesas " + formatarReais(t.despesas);
+  // Compras no crédito feitas neste mês que já estão na fatura do mês seguinte (só informativo: entram nas despesas de lá)
+  const seguinte = somarMeses(estado.mes, 1);
+  const naProxima = (estado.futuro || []).filter(l => l.tipo === "despesa" && l.cartaoId && l.competencia === seguinte && l.data.slice(0, 7) === estado.mes)
+    .reduce((a, l) => a + valorDespesa(l, estado.pessoal), 0);
+  const pct = v => Math.round(v * 100);
+  $("heroi").innerHTML =
+    "<div class=\"heroi-topo\"><span class=\"rotulo\">" + escapar(titulo) + "</span>" + (pilula ? "<span class=\"pilula\">" + escapar(pilula) + "</span>" : "") + "</div>" +
+    "<div><div class=\"grande num\">" + (t.saldo < 0 ? "-" : "") + formatarReais(Math.abs(t.saldo)) + "</div><div class=\"sub num\">" + escapar(sub) + "</div></div>" +
+    (orcado ? "<div class=\"ritmo\"><div class=\"ritmo-barra\" role=\"img\" aria-label=\"Gasto de " + pct(usado) + "% do orçado" + (atual && !transicao ? "; esperado hoje " + pct(esperado) + "%" : "") + "\"><i style=\"width:" + Math.min(100, pct(usado)) + "%\"></i>" +
+      (atual && !transicao ? "<b style=\"left:" + (esperado * 100).toFixed(1) + "%\"></b>" : "") + "</div>" +
+      "<div class=\"ritmo-legenda num\"><span>Gasto " + formatarReais(t.despesas) + " de " + formatarReais(orcado) + " orçados (" + pct(usado) + "%)</span>" + (atual && !transicao ? "<span>Esperado hoje: " + pct(esperado) + "%</span>" : "") + "</div></div>" : "") +
+    (naProxima > 0 ? "<div class=\"extra num\">Já na fatura de " + escapar(nomeMes(seguinte)) + ": " + formatarReais(naProxima) + " em compras feitas em " + escapar(nome) + ". Esse valor entra nas despesas de " + escapar(nomeMes(seguinte)) + ".</div>" : "");
+  // Receitas, despesas, saldo e a receber
+  const anterior = somarMeses(estado.mes, -1);
+  const tAnt = totais(estado.lancamentos.filter(l => l.competencia === anterior), opc);
+  const variacao = (atualV, base) => {
+    if (transicao) return "comparação indisponível (mês de transição)";
+    if (!base) return "sem " + nomeMes(anterior) + " para comparar";
+    const p = Math.round(((atualV - base) / base) * 100);
+    return (p > 0 ? "▲ " : p < 0 ? "▼ " : "") + Math.abs(p) + "% sobre " + nomeMes(anterior);
+  };
   $("kReceitas").textContent = formatarReais(t.receitas);
   $("kDespesas").textContent = formatarReais(t.despesas);
   $("kSaldo").textContent = (t.saldo < 0 ? "-" : "") + formatarReais(Math.abs(t.saldo));
-  $("kSaldo").className = "valor num " + (t.saldo < 0 ? "despesa" : "receita");
-  const qtdR = doMes.filter(l => l.tipo === "receita").length;
-  const qtdD = doMes.filter(l => l.tipo === "despesa").length;
-  $("kReceitasDet").textContent = qtdR + (qtdR === 1 ? " lançamento" : " lançamentos");
-  $("kDespesasDet").textContent = t.despesasPrevistas > 0
-    ? formatarReais(t.despesasPagas) + " pagas · " + formatarReais(t.despesasPrevistas) + " previstas"
-    : qtdD + (qtdD === 1 ? " lançamento" : " lançamentos");
-  document.querySelectorAll("[data-visao]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.visao === "pessoal") === estado.pessoal)));
+  $("kSaldo").className = "v num " + (t.saldo < 0 ? "despesa" : "");
+  $("kReceitasDet").textContent = variacao(t.receitas, tAnt.receitas);
+  $("kDespesasDet").textContent = variacao(t.despesas, tAnt.despesas) + (t.despesasPrevistas > 0 ? " · inclui " + formatarReais(t.despesasPrevistas) + " previstas" : "");
+  $("kGuardado").textContent = t.receitas > 0 ? (Math.round((t.saldo / t.receitas) * 1000) / 10).toLocaleString("pt-BR") + "% da receita" : "sem receitas no mês";
   const receber = calcularAReceber(estado.reembDespesas, estado.reembReceitas, (estado.config && estado.config.reembolsosDesde) || "2026-10-01");
   const totalReceber = receber.vigor + receber.paola;
   $("kReceber").textContent = (totalReceber < 0 ? "-" : "") + formatarReais(Math.abs(totalReceber));
   $("kReceberDet").textContent = "Vigor " + formatarReais(receber.vigor) + " · Paola " + formatarReais(receber.paola);
-  $("kGuardado").textContent = t.receitas > 0 ? (Math.round((t.saldo / t.receitas) * 1000) / 10).toLocaleString("pt-BR") + "% da receita guardado" : "Sem receitas no mês";
-
-  // Variação das despesas: contra o mês anterior e contra a média dos 6 meses anteriores
-  const despesasDe = comp => totais(estado.lancamentos.filter(l => l.competencia === comp), { pessoal: estado.pessoal }).despesas;
-  const anterior = despesasDe(somarMeses(estado.mes, -1));
-  const seis = [];
-  for (let i = 1; i <= 6; i++) {
-    const v = despesasDe(somarMeses(estado.mes, -i));
-    if (v > 0) seis.push(v);
+  document.querySelectorAll("[data-visao]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.visao === "pessoal") === estado.pessoal)));
+  $("avisoTransicao").hidden = !transicao;
+  // Onde mais gastei: 5 maiores categorias
+  const soma = new Map();
+  for (const l of doMes) {
+    if (l.tipo !== "despesa") continue;
+    const v = valorDespesa(l, estado.pessoal);
+    if (v > 0) soma.set(l.categoriaId, (soma.get(l.categoriaId) || 0) + v);
   }
-  const media = seis.length ? Math.round(seis.reduce((a, b) => a + b, 0) / seis.length) : 0;
-  const pct = (atual, base) => base > 0 ? Math.round(((atual - base) / base) * 1000) / 10 : null;
-  const vMedia = pct(t.despesas, media);
-  const vAnterior = pct(t.despesas, anterior);
-  const sinal = v => (v > 0 ? "+" : v < 0 ? "-" : "") + Math.abs(v).toLocaleString("pt-BR") + "%";
-  $("kVariacao").textContent = vMedia === null ? "—" : sinal(vMedia);
-  $("kVariacao").className = "valor num " + (vMedia === null ? "" : vMedia > 0 ? "despesa" : "receita");
-  $("kVariacaoDet").textContent = (media ? "Média 6 meses " + formatarReais(media) : "Sem meses anteriores") +
-    (vAnterior === null ? "" : " · mês anterior " + sinal(vAnterior));
-
-  $("avisoTransicao").hidden = estado.mes !== "2026-10";
+  const top = [...soma.entries()].sort((x, y) => y[1] - x[1]).slice(0, 5);
+  const maior = top.length ? top[0][1] : 1;
+  $("topCategorias").innerHTML = top.length ? top.map(([id, v]) => {
+    const c = categoriaPorId(id);
+    return "<button type=\"button\" class=\"hb\" data-cat=\"" + escapar(id) + "\"><span class=\"hb-nome\"><i class=\"ponto\" style=\"background:" + escapar(c.cor) + "\"></i><span>" + escapar(c.nome) + "</span></span>" +
+      "<span class=\"hb-valor num\">" + formatarReais(v) + "</span><span class=\"hb-trilho\"><i style=\"width:" + Math.max(1, Math.round(v / maior * 100)) + "%\"></i></span>" +
+      "<span class=\"hb-meta num\">" + Math.round(v / Math.max(1, t.despesas) * 100) + "% das despesas</span></button>";
+  }).join("") : "<p class=\"dica\">Nenhuma despesa neste mês ainda.</p>";
+  // Próximos 15 dias (só no mês atual: faturas a vencer e contas previstas fora do cartão)
+  $("cartaoProximos").hidden = !atual;
+  if (atual) {
+    const ate = new Date(Date.parse(hoje + "T12:00:00Z") + 15 * 864e5).toISOString().slice(0, 10);
+    const vistos = new Set(), todos = [];
+    for (const l of estado.lancamentos.concat(estado.futuro || [])) { if (!vistos.has(l.id)) { vistos.add(l.id); todos.push(l); } }
+    const itens = [];
+    for (const c of estado.cartoes.filter(x => x.ativo)) {
+      for (const comp of [mesHoje, somarMeses(mesHoje, 1)]) {
+        const venc = dataVencimento(comp, c);
+        if (venc < hoje || venc > ate) continue;
+        const compras = todos.filter(l => l.tipo === "despesa" && l.cartaoId === c.id && l.competencia === comp);
+        const total = compras.reduce((a, l) => a + l.valorCentavos, 0);
+        if (total > 0) itens.push({ data: venc, nome: "Fatura " + c.nome, meta: compras.length + (compras.length === 1 ? " compra" : " compras"), valor: total });
+      }
+    }
+    for (const l of todos) {
+      if (l.tipo === "despesa" && l.status === "prevista" && !l.cartaoId && l.data >= hoje && l.data <= ate)
+        itens.push({ data: l.data, nome: l.descricao, meta: (FORMAS[l.formaPagamento] || l.formaPagamento) + " · prevista, valor médio", valor: l.valorCentavos });
+    }
+    itens.sort((x, y) => x.data.localeCompare(y.data));
+    const mesCurto = d => new Intl.DateTimeFormat("pt-BR", { month: "short", timeZone: "UTC" }).format(new Date(d + "T00:00:00Z")).replace(".", "");
+    $("proximos").innerHTML = itens.length ? itens.map(i =>
+      "<div class=\"venc-l\"><span class=\"dia-caixa\"><b class=\"num\">" + i.data.slice(8, 10) + "</b><small>" + escapar(mesCurto(i.data)) + "</small></span>" +
+      "<span class=\"venc-t\"><span class=\"venc-n\">" + escapar(i.nome) + "</span><small>" + escapar(i.meta) + "</small></span><span class=\"num venc-v\">" + formatarReais(i.valor) + "</span></div>"
+    ).join("") : "<p class=\"dica\">Nada vence até " + formatarDataCurta(ate) + ".</p>";
+    // Pendências: contas previstas que já venceram e não foram confirmadas
+    const aConfirmar = todos.filter(l => l.tipo === "despesa" && l.status === "prevista" && l.data <= hoje).length;
+    $("pendInicio").hidden = aConfirmar === 0;
+    $("pendInicio").innerHTML = "<span class=\"qtd num\">" + aConfirmar + "</span><span><b>Pendências</b>: " + aConfirmar +
+      (aConfirmar === 1 ? " conta fixa vencida ainda não confirmada" : " contas fixas vencidas ainda não confirmadas") + "</span><span aria-hidden=\"true\">›</span>";
+  } else {
+    $("pendInicio").hidden = true;
+  }
   desenharBackupInfo();
 }
 
@@ -2321,21 +2487,78 @@ function desenharFixas() {
   const cartoesAtivos = estado.cartoes.filter(c => c.ativo).map(c => [c.id, c.nome]);
   const categorias = estado.categorias.filter(c => c.tipo === "despesa" && c.ativa).map(c => [c.id, c.nome]);
   const formas = Object.entries(FORMAS);
-  $("listaFixas").innerHTML = estado.contasFixas.length ? estado.contasFixas.map(f =>
-    "<div class=\"fixa-linha" + (f.ativa ? "" : " inativa") + "\" data-id=\"" + escapar(f.id) + "\">" +
-    "<label>Conta<input type=\"text\" value=\"" + escapar(f.descricao) + "\" maxlength=\"40\" data-campo=\"descricao\"></label>" +
-    "<label>Dia<input type=\"number\" inputmode=\"numeric\" min=\"1\" max=\"31\" value=\"" + f.diaVencimento + "\" data-campo=\"diaVencimento\"></label>" +
-    "<label>Valor médio<input type=\"text\" inputmode=\"decimal\" value=\"" + centavosParaTexto(f.valorEstimadoCentavos) + "\" data-campo=\"valorEstimadoCentavos\"></label>" +
-    "<label>Pagamento<select data-campo=\"formaPagamento\">" + opcoesSelect(formas, f.formaPagamento) + "</select></label>" +
-    "<label class=\"" + (f.formaPagamento === "credito" ? "" : "sem-cartao") + "\">Cartão<select data-campo=\"cartaoId\">" + opcoesSelect(cartoesAtivos, f.cartaoId, "Escolha") + "</select></label>" +
-    "<label>Categoria<select data-campo=\"categoriaId\">" + opcoesSelect(categorias.concat(categorias.some(([id]) => id === f.categoriaId) ? [] : [[f.categoriaId, categoriaPorId(f.categoriaId).nome]]), f.categoriaId) + "</select></label>" +
-    "<button type=\"button\" class=\"botao texto\" data-acao=\"ativa\">" + (f.ativa ? "Desativar" : "Reativar") + "</button></div>"
-  ).join("") : "<div class=\"vazio\"><strong>Nenhuma conta fixa</strong><span>Adicione a primeira abaixo.</span></div>";
-  // Formulário de nova conta: mantém o que já foi escolhido
+  // Situação de cada conta no mês escolhido (pela data do pagamento)
+  const vistos = new Set(), doMesData = [];
+  for (const l of estado.lancamentos.concat(estado.futuro || [])) {
+    if (vistos.has(l.id)) continue;
+    vistos.add(l.id);
+    if (l.contaFixaId && l.data.slice(0, 7) === estado.mes) doMesData.push(l);
+  }
+  const mesCurto = new Intl.DateTimeFormat("pt-BR", { month: "short", timeZone: "UTC" }).format(new Date(estado.mes + "-01T00:00:00Z")).replace(".", "");
+  const contas = estado.contasFixas.slice().sort((x, y) => (y.ativa - x.ativa) || (x.diaVencimento - y.diaVencimento) || x.descricao.localeCompare(y.descricao));
+  $("listaFixas").innerHTML = contas.length ? contas.map(f => {
+    const l = doMesData.find(x => x.contaFixaId === f.id);
+    const situacao = !f.ativa ? ["inativa", "desativada"] : !l ? ["sem", "sem lançamento em " + mesCurto] : l.status === "prevista" ? ["prev", "prevista em " + mesCurto] : ["paga", "paga em " + mesCurto];
+    const onde = f.formaPagamento === "credito" ? (cartaoPorId(f.cartaoId)?.nome || "Crédito") : (FORMAS[f.formaPagamento] || f.formaPagamento);
+    return "<button type=\"button\" class=\"fixa-item" + (f.ativa ? "" : " inativa") + "\" data-id=\"" + escapar(f.id) + "\">" +
+      "<span class=\"dia-caixa\"><b class=\"num\">" + String(f.diaVencimento).padStart(2, "0") + "</b><small>dia</small></span>" +
+      "<span class=\"fixa-t\"><span class=\"fixa-n\">" + escapar(f.descricao) + "</span><small>" + escapar(onde + " · " + categoriaPorId(f.categoriaId).nome) + "</small></span>" +
+      "<span class=\"fixa-v\"><span class=\"num\">" + formatarReais(l && l.status !== "prevista" ? l.valorCentavos : f.valorEstimadoCentavos) + "</span><small class=\"sit " + situacao[0] + "\">" + escapar(situacao[1]) + "</small></span>" +
+      "<span class=\"seta\" aria-hidden=\"true\">›</span></button>";
+  }).join("") : "<div class=\"vazio\"><strong>Nenhuma conta fixa</strong><span>Toque em \"+ Nova conta fixa\".</span></div>";
+  // Formulário antigo de nova conta (escondido): mantém as listas preenchidas
   const manter = (id, html) => { const v = $(id).value; $(id).innerHTML = html; if (v) $(id).value = v; };
   manter("nfForma", opcoesSelect(formas, "debito"));
   manter("nfCartao", opcoesSelect(cartoesAtivos, "", "Escolha"));
   manter("nfCategoria", opcoesSelect(categorias, "despesa-moradia-e-contas"));
+}
+
+// Folha de edição da conta fixa (null = conta nova)
+let fixaAberta = null;
+function abrirFixa(conta) {
+  fixaAberta = conta;
+  const cartoesAtivos = estado.cartoes.filter(c => c.ativo).map(c => [c.id, c.nome]);
+  const categorias = estado.categorias.filter(c => c.tipo === "despesa" && c.ativa).map(c => [c.id, c.nome]);
+  const catAtual = conta && !categorias.some(([id]) => id === conta.categoriaId) ? [[conta.categoriaId, categoriaPorId(conta.categoriaId).nome]] : [];
+  $("tituloFixa").textContent = conta ? "Editar: " + conta.descricao : "Nova conta fixa";
+  $("fxDescricao").value = conta ? conta.descricao : "";
+  $("fxDia").value = conta ? conta.diaVencimento : "";
+  $("fxValor").value = conta ? centavosParaTexto(conta.valorEstimadoCentavos) : "";
+  $("fxForma").innerHTML = opcoesSelect(Object.entries(FORMAS), conta ? conta.formaPagamento : "debito");
+  $("fxCartao").innerHTML = opcoesSelect(cartoesAtivos, conta ? conta.cartaoId : "", "Escolha");
+  $("fxCategoria").innerHTML = opcoesSelect(categorias.concat(catAtual), conta ? conta.categoriaId : "despesa-moradia-e-contas");
+  $("fxAlternar").hidden = !conta;
+  $("fxAlternar").textContent = conta && !conta.ativa ? "Reativar conta" : "Desativar conta";
+  $("fxSalvar").textContent = conta ? "Salvar" : "Adicionar conta";
+  atualizarCartaoFixa();
+  $("fundoFixa").hidden = false;
+}
+function fecharFixa() { $("fundoFixa").hidden = true; fixaAberta = null; }
+function atualizarCartaoFixa() { $("fxCartaoCampo").hidden = $("fxForma").value !== "credito"; }
+async function salvarFixa(e) {
+  e.preventDefault();
+  const descricao = $("fxDescricao").value.trim();
+  const dia = Number($("fxDia").value);
+  const valor = textoParaCentavos($("fxValor").value);
+  const forma = $("fxForma").value;
+  const cartaoId = forma === "credito" ? ($("fxCartao").value || null) : null;
+  const categoriaId = $("fxCategoria").value;
+  if (!descricao || !Number.isInteger(dia) || dia < 1 || dia > 31 || !valor || valor <= 0) { mostrarAviso("Preencha a conta, o dia (1 a 31) e um valor médio maior que zero.", null); return; }
+  if (forma === "credito" && !cartaoId) { mostrarAviso("Escolha o cartão da conta no crédito.", null); return; }
+  const dados = { descricao, diaVencimento: dia, valorEstimadoCentavos: valor, formaPagamento: forma, cartaoId, categoriaId };
+  const conta = fixaAberta;
+  if (conta) {
+    const mudanca = {};
+    for (const [k, v] of Object.entries(dados)) if ((conta[k] ?? null) !== v) mudanca[k] = v;
+    if (!Object.keys(mudanca).length) { fecharFixa(); return; }
+    const ok = await gravarComSeguranca(() => colecaoFixas().doc(conta.id).update(mudanca), "Não consegui salvar a conta fixa.");
+    if (ok) { fecharFixa(); mostrarAviso(descricao + " salva. Vale para os próximos meses.", null); }
+  } else {
+    let id = criarIdCategoria("fixa", descricao);
+    if (estado.contasFixas.some(f => f.id === id)) id += "-" + Date.now().toString(36);
+    const ok = await gravarComSeguranca(() => colecaoFixas().doc(id).set({ ...dados, ativa: true }), "Não consegui criar a conta fixa.");
+    if (ok) { fecharFixa(); mostrarAviso(descricao + " adicionada; a prevista aparece no mês", null); }
+  }
 }
 
 async function salvarCampoFixa(e) {
@@ -2740,7 +2963,7 @@ function escutarFuturo() {
     .where("competencia", "<=", somarMeses(estado.mes, 6))
     .limit(1000);
   estado.desligarFuturo = consulta.onSnapshot(
-    foto => { estado.futuro = foto.docs.map(d => ({ id: d.id, ...d.data() })); if (estado.tela === "analise") desenharGraficoFuturo(); },
+    foto => { estado.futuro = foto.docs.map(d => ({ id: d.id, ...d.data() })); { if (estado.tela === "analise") desenharGraficoFuturo(); if (estado.tela === "inicio") desenharInicio(); if (estado.tela === "cartoes") desenharFixas(); } },
     () => {}
   );
 }
@@ -3244,12 +3467,32 @@ function ligarEventos() {
   });
   $("listaSemCartao").addEventListener("change", atribuirCartao);
   // Contas fixas
-  $("listaFixas").addEventListener("change", salvarCampoFixa);
   $("listaFixas").addEventListener("click", e => {
-    if (e.target.dataset.acao !== "ativa") return;
-    const conta = estado.contasFixas.find(f => f.id === e.target.closest(".fixa-linha").dataset.id);
-    if (conta) alternarFixa(conta);
+    const item = e.target.closest(".fixa-item");
+    if (!item) return;
+    const conta = estado.contasFixas.find(f => f.id === item.dataset.id);
+    if (conta) abrirFixa(conta);
   });
+  $("novaFixa").addEventListener("click", () => abrirFixa(null));
+  $("fecharFixa").addEventListener("click", fecharFixa);
+  $("fundoFixa").addEventListener("click", e => { if (e.target === $("fundoFixa")) fecharFixa(); });
+  $("fxForma").addEventListener("change", atualizarCartaoFixa);
+  $("formFixa").addEventListener("submit", salvarFixa);
+  $("fxAlternar").addEventListener("click", async () => { const conta = fixaAberta; if (!conta) return; fecharFixa(); await alternarFixa(conta); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("fundoFixa").hidden) fecharFixa(); });
+  // Início
+  $("topCategorias").addEventListener("click", e => {
+    const b = e.target.closest("[data-cat]");
+    if (!b) return;
+    estado.filtroTipo = "despesa";
+    estado.filtroCategoria = b.dataset.cat;
+    estado.busca = "";
+    $("busca").value = "";
+    irPara("lancamentos");
+  });
+  $("irAnalise").addEventListener("click", () => irPara("analise"));
+  $("irPlanejar").addEventListener("click", () => irPara("cartoes"));
+  $("pendInicio").addEventListener("click", () => { estado.filtroTipo = "todos"; estado.filtroCategoria = ""; estado.busca = ""; $("busca").value = ""; irPara("lancamentos"); });
   $("formNovaFixa").addEventListener("submit", async e => {
     e.preventDefault();
     const descricao = $("nfDescricao").value.trim();
