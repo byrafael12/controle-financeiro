@@ -18,6 +18,13 @@ App pessoal de controle financeiro de Rafael de Freitas: receitas, despesas, car
 - Nenhum dado financeiro: os lançamentos ficam no Supabase, protegidos por login e RLS, e os backups (JSON) ficam fora do GitHub.
 - Nenhuma senha, token ou chave secreta (só a chave publishable, que é pública por definição).
 
+## Sem internet (Entrega 6, 26/10/2026)
+
+- `sw.js` (service worker) guarda os arquivos do app no aparelho; `manifest.webmanifest` e os ícones permitem o atalho na tela de início.
+- Os dados lidos ficam numa cópia no aparelho (IndexedDB); sem internet, o app mostra essa cópia e avisa a data.
+- Sem internet só é possível **criar** lançamentos: eles ficam numa fila "aguardando envio" e sobem sozinhos quando a conexão volta (mesmo código, sem duplicar). Editar, excluir, backup, exportação e restauração exigem conexão.
+- Sair apaga a cópia e a fila do aparelho (e não deixa sair com lançamentos aguardando envio).
+
 ## Segurança (revisão OWASP Top 10, 25/10/2026)
 
 | Risco OWASP | O que o app faz |

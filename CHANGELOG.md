@@ -2,6 +2,7 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 19 | 26/10/2026 | Entrega 6: funciona sem internet. Abre pelo atalho da tela de início (service worker, manifesto e ícone), mostra os dados guardados no aparelho, lançamentos novos ficam na fila "aguardando envio" e sobem sozinhos quando a conexão volta; editar, excluir, backup e restauração exigem conexão |
 | 18 | 25/10/2026 | Entrega 5.8: verificação em duas etapas (Google Authenticator) exigida também pelo banco, esqueci a senha, olho na senha, regra de senha forte, CSP, bibliotecas servidas pelo próprio site, bloqueio em iframe |
 | 17 | 25/10/2026 | Entrega 5: dados no Supabase com login por e-mail e senha, publicação no GitHub Pages, restauração de backup em lote e no primeiro acesso, download pelo navegador |
 | 16 | 25/10/2026 | Parcela vinda da planilha: mostra o valor cheio da parcela e as faturas restantes, sem prévia de redivisão |

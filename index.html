@@ -3,13 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-dDG5OrU4Pf9nS7kakl45J34mQjTNiAce6dFZ5qF40Ag='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-9OBUzskMIPMBlIanwzbriZtHpKmXXRd+MykH6Od0OMA='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Finanças">
 <title>Controle Financeiro</title>
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 18 (Entrega 5.8), 25/10/2026: verificação em duas etapas, esqueci a senha, olho na senha, CSP e bibliotecas locais. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icone-192.png">
+<meta name="theme-color" content="#2b4c9c">
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 19 (Entrega 6), 26/10/2026: funciona sem internet (lançamentos novos ficam no aparelho e sobem quando a conexão volta). Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -335,6 +339,10 @@ select.filtro { width: auto; min-width: 170px; }
 }
 /* Qualquer elemento com o atributo hidden some (fora do claude.ai não há regra que faça isso) */
 [hidden] { display: none !important; }
+/* Sem internet */
+.aviso-rede { margin: 8px 16px 0; padding: 10px 14px; border-radius: 12px; font-size: .9rem; background: var(--surface-2); color: var(--fg); border: 1px dashed var(--previsto); }
+.aviso-rede.offline { border-style: solid; border-color: var(--despesa); }
+.selo.pendente { background: transparent; color: var(--despesa); border: 1px dashed var(--despesa); }
 /* Tela de login */
 .login { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: var(--bg); }
 .login[hidden], .app[hidden] { display: none; }
@@ -442,6 +450,7 @@ select.filtro { width: auto; min-width: 170px; }
     </div>
     <button type="button" class="tema" id="botaoTema" aria-label="Tema: automático" title="Tema: automático"></button></div>
   </header>
+  <div class="aviso-rede" id="avisoRede" role="status" hidden></div>
 
   <nav class="nav" aria-label="Telas">
     <button type="button" data-tela="inicio" aria-current="page">
@@ -774,7 +783,70 @@ class ErroBanco extends Error {
     const status = erro && erro.status;
     this.code = status === 429 ? "resource_exhausted" : (!status || status >= 500) ? "unavailable" : (erro && erro.code) || "erro";
     this.detalhe = erro;
+    // Sem internet: o pedido nem chegou ao servidor (status 0 ou erro de rede do navegador)
+    this.semRede = ehFalhaDeRede(erro);
   }
+}
+
+function ehFalhaDeRede(erro) {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+  const msg = String((erro && (erro.message || erro.details)) || "");
+  return (erro && erro.status === 0) || /failed to fetch|networkerror|load failed|network request failed|internet/i.test(msg);
+}
+
+/* ---------- Armazenamento no aparelho (IndexedDB) ----------
+   "cache": a última resposta de cada leitura, para mostrar os dados sem internet.
+   "fila": lançamentos novos feitos sem internet, aguardando envio. Some ao enviar ou ao tocar em Sair. */
+class ArmazemLocal {
+  constructor(nome) { this.nome = nome; this.db = null; }
+
+  abrir() {
+    if (this.db) return Promise.resolve(this.db);
+    return new Promise((ok, falha) => {
+      let pedido;
+      try { pedido = indexedDB.open(this.nome, 1); } catch (e) { falha(e); return; }
+      pedido.onupgradeneeded = () => {
+        const db = pedido.result;
+        if (!db.objectStoreNames.contains("cache")) db.createObjectStore("cache");
+        if (!db.objectStoreNames.contains("fila")) db.createObjectStore("fila");
+      };
+      pedido.onsuccess = () => { this.db = pedido.result; ok(this.db); };
+      pedido.onerror = () => falha(pedido.error);
+    });
+  }
+
+  async operar(loja, modo, acao) {
+    const db = await this.abrir();
+    return new Promise((ok, falha) => {
+      const t = db.transaction(loja, modo);
+      const r = acao(t.objectStore(loja));
+      t.oncomplete = () => ok(r && "result" in r ? r.result : undefined);
+      t.onerror = () => falha(t.error);
+      t.onabort = () => falha(t.error);
+    });
+  }
+
+  ler(loja, chave) { return this.operar(loja, "readonly", s => s.get(chave)); }
+  gravar(loja, chave, valor) { return this.operar(loja, "readwrite", s => s.put(valor, chave)); }
+  apagar(loja, chave) { return this.operar(loja, "readwrite", s => s.delete(chave)); }
+  todos(loja) { return this.operar(loja, "readonly", s => s.getAll()); }
+  limpar(loja) { return this.operar(loja, "readwrite", s => s.clear()); }
+}
+
+// Confere localmente se uma linha atende aos filtros de uma consulta (para mostrar os pendentes na lista certa)
+function linhaAtende(linha, filtros) {
+  return filtros.every(([coluna, op, valor]) => {
+    const v = linha[coluna];
+    if (op === "eq") return v === valor;
+    if (op === "neq") return v !== valor;
+    if (op === "in") return Array.isArray(valor) && valor.includes(v);
+    if (v === null || v === undefined) return false;
+    if (op === "gte") return v >= valor;
+    if (op === "lte") return v <= valor;
+    if (op === "gt") return v > valor;
+    if (op === "lt") return v < valor;
+    return false;
+  });
 }
 
 // "2026-02-31" não existe no banco: vira o último dia do mês (o app usa -31 como "até o fim do mês")
@@ -791,9 +863,137 @@ class Banco {
     this.uid = uid;
     this.ouvintes = new Map(); // tabela -> Set de funções que leem de novo
     this.pendentes = new Map();
+    this.armazem = new ArmazemLocal("controle-financeiro-" + uid);
+    this.fila = new Map();          // "tabela|id" -> linha aguardando envio
+    this.semRede = typeof navigator !== "undefined" && navigator.onLine === false;
+    this.dadosDe = null;            // quando os dados mostrados vieram do aparelho: data da última leitura com internet
+    this.aoMudar = () => {};        // o app usa para atualizar o aviso de conexão
+    this.enviando = false;
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") for (const nome of this.ouvintes.keys()) this.avisar(nome, 0);
+      if (document.visibilityState === "visible") { this.enviarFila(); for (const nome of this.ouvintes.keys()) this.avisar(nome, 0); }
     });
+    window.addEventListener("online", () => { this.marcarRede(true); this.enviarFila().then(() => { for (const nome of this.ouvintes.keys()) this.avisar(nome, 0); }); });
+    window.addEventListener("offline", () => this.marcarRede(false));
+  }
+
+  conectado() { return !this.semRede && navigator.onLine !== false; }
+
+  marcarRede(ok) {
+    const antes = this.semRede;
+    this.semRede = !ok;
+    if (ok) this.dadosDe = null;
+    if (antes !== this.semRede) this.aoMudar();
+  }
+
+  // Carrega do aparelho a fila de lançamentos que ainda não subiram
+  async carregarFila() {
+    try {
+      for (const item of await this.armazem.todos("fila")) this.fila.set(item.tabela + "|" + item.id, item);
+    } catch (e) { console.warn("Fila local indisponível", e); }
+    this.aoMudar();
+  }
+
+  quantosAguardando() { return this.fila.size; }
+
+  // Guarda no aparelho lançamentos NOVOS feitos sem internet (só criação; editar e excluir exigem conexão)
+  async enfileirar(nome, docs) {
+    const m = this.mapa(nome);
+    for (const { id, ...corpo } of docs) {
+      const item = { tabela: m.tabela, nome, id, linha: this.paraLinha(nome, id, corpo), criadoEm: new Date().toISOString() };
+      await this.armazem.gravar("fila", m.tabela + "|" + id, item);
+      this.fila.set(m.tabela + "|" + id, item);
+    }
+    this.aoMudar();
+    this.avisar(nome, 0);
+  }
+
+  // Envia a fila; o mesmo código de lançamento nunca duplica (gravação por "upsert")
+  async enviarFila() {
+    if (this.enviando || this.fila.size === 0 || navigator.onLine === false) return 0;
+    this.enviando = true;
+    this.aoMudar();
+    let enviados = 0;
+    try {
+      for (const [chave, item] of [...this.fila.entries()]) {
+        const m = this.mapa(item.nome);
+        const { error } = await this.cliente.from(item.tabela)
+          .upsert(item.linha, { onConflict: "user_id," + m.chave, defaultToNull: false });
+        if (error) {
+          const e = new ErroBanco(error);
+          if (e.semRede) { this.marcarRede(false); break; }
+          console.error("Não consegui enviar um lançamento da fila", item.id, error);
+          continue; // fica na fila e tenta de novo depois
+        }
+        await this.armazem.apagar("fila", chave);
+        this.fila.delete(chave);
+        enviados++;
+        this.marcarRede(true);
+      }
+    } finally {
+      this.enviando = false;
+      this.aoMudar(enviados);
+    }
+    if (enviados) this.avisar("lancamentos", 0);
+    return enviados;
+  }
+
+  // Lançamentos pendentes que atendem a uma consulta, no formato do app, com a marca "aguardando envio"
+  pendentesDe(nome, filtros) {
+    const m = this.mapa(nome);
+    const lista = [];
+    for (const item of this.fila.values()) {
+      if (item.tabela === m.tabela && linhaAtende(item.linha, filtros)) {
+        const doc = this.paraDoc(nome, item.linha);
+        lista.push({ id: doc.id, exists: true, data: () => ({ ...doc.data(), pendenteEnvio: true }) });
+      }
+    }
+    return lista;
+  }
+
+  async guardarLeitura(chave, linhas) {
+    try { await this.armazem.gravar("cache", chave, { linhas, quando: new Date().toISOString() }); } catch (e) { /* sem espaço: segue sem cópia */ }
+  }
+
+  async lerGuardado(chave) {
+    try { return await this.armazem.ler("cache", chave); } catch (e) { return undefined; }
+  }
+
+  // Sem a cópia exata de uma consulta: junta tudo o que está guardado desta tabela (sem repetir) e filtra aqui.
+  // Assim qualquer mês abre sem internet, mesmo que não tenha sido visitado com internet.
+  async montarDoGuardado(nome, filtros, limite) {
+    const m = this.mapa(nome);
+    const prefixo = this.uid + "|" + nome + "|";
+    let chaves = [];
+    try { chaves = (await this.armazem.operar("cache", "readonly", s => s.getAllKeys())).filter(k => typeof k === "string" && k.startsWith(prefixo) && !k.startsWith(prefixo + "doc|")); } catch (e) { return undefined; }
+    if (!chaves.length) return undefined;
+    const porId = new Map();
+    let quando = null;
+    for (const chave of chaves) {
+      const g = await this.lerGuardado(chave);
+      if (!g || !Array.isArray(g.linhas)) continue;
+      if (!quando || g.quando < quando) quando = g.quando;
+      for (const linha of g.linhas) {
+        const id = m.chave ? linha[m.chave] : "geral";
+        const atual = porId.get(id);
+        // Fica a versão mais recente da linha (pelo atualizado_em, quando a tabela tem)
+        if (!atual || String(linha.atualizado_em || "") >= String(atual.atualizado_em || "")) porId.set(id, linha);
+      }
+    }
+    let linhas = [...porId.values()].filter(l => linhaAtende(l, filtros));
+    if (limite) linhas = linhas.slice(0, limite);
+    return { linhas, quando };
+  }
+
+  // Com internet: guarda no aparelho todos os lançamentos (cerca de 1 MB), para qualquer mês abrir sem internet
+  async guardarTudoParaUsoSemInternet() {
+    if (!this.conectado()) return;
+    try { await this.collection("lancamentos").get(); } catch (e) { /* tenta de novo na próxima abertura */ }
+  }
+
+  // Sair: apaga do aparelho a cópia dos dados e a fila (avisando antes se houver pendentes)
+  async limparLocal() {
+    try { await this.armazem.limpar("cache"); await this.armazem.limpar("fila"); } catch (e) { /* nada a apagar */ }
+    this.fila.clear();
   }
 
   mapa(nome) {
@@ -888,9 +1088,11 @@ class Consulta {
 
   doc(id) { return new Documento(this.banco, this.nome, id); }
 
-  async get() {
+  chaveLocal() { return [this.banco.uid, this.nome, JSON.stringify(this.filtros), this.limite || 0].join("|"); }
+
+  async lerDoBanco() {
     const m = this.banco.mapa(this.nome);
-    const docs = [];
+    const linhas = [];
     const maximo = this.limite || 100000;
     const pagina = 1000; // o Supabase devolve no máximo 1000 linhas por pedido
     for (let inicio = 0; inicio < maximo; inicio += pagina) {
@@ -900,9 +1102,33 @@ class Consulta {
       const fim = Math.min(inicio + pagina, maximo) - 1;
       const { data, error } = await q.range(inicio, fim);
       if (error) throw new ErroBanco(error);
-      for (const linha of data) docs.push(this.banco.paraDoc(this.nome, linha));
+      linhas.push(...data);
       if (data.length < fim - inicio + 1) break;
     }
+    return linhas;
+  }
+
+  // Com internet: lê do banco e guarda uma cópia no aparelho. Sem internet: usa a última cópia guardada.
+  // Nos dois casos, soma os lançamentos novos que ainda aguardam envio.
+  async get() {
+    let linhas;
+    try {
+      if (navigator.onLine === false) throw new ErroBanco({ status: 0, message: "offline" });
+      linhas = await this.lerDoBanco();
+      this.banco.marcarRede(true);
+      this.banco.guardarLeitura(this.chaveLocal(), linhas);
+    } catch (erro) {
+      if (!(erro instanceof ErroBanco) || !erro.semRede) throw erro;
+      this.banco.marcarRede(false);
+      const guardado = (await this.banco.lerGuardado(this.chaveLocal())) || (await this.banco.montarDoGuardado(this.nome, this.filtros, this.limite));
+      if (!guardado) throw erro;
+      linhas = guardado.linhas;
+      if (!this.banco.dadosDe || guardado.quando < this.banco.dadosDe) this.banco.dadosDe = guardado.quando;
+      this.banco.aoMudar();
+    }
+    const pendentes = this.banco.pendentesDe(this.nome, this.filtros);
+    const idsPendentes = new Set(pendentes.map(d => d.id));
+    const docs = linhas.filter(l => !idsPendentes.has(l[this.banco.mapa(this.nome).chave])).map(l => this.banco.paraDoc(this.nome, l)).concat(pendentes);
     return { docs, size: docs.length, empty: docs.length === 0 };
   }
 
@@ -940,8 +1166,22 @@ class Documento {
 
   async get() {
     const m = this.banco.mapa(this.nome);
-    const { data, error } = await this.filtrar(this.banco.cliente.from(m.tabela).select("*")).maybeSingle();
-    if (error) throw new ErroBanco(error);
+    const chave = [this.banco.uid, this.nome, "doc", this.id].join("|");
+    let data;
+    try {
+      if (navigator.onLine === false) throw new ErroBanco({ status: 0, message: "offline" });
+      const r = await this.filtrar(this.banco.cliente.from(m.tabela).select("*")).maybeSingle();
+      if (r.error) throw new ErroBanco(r.error);
+      data = r.data;
+      this.banco.marcarRede(true);
+      this.banco.guardarLeitura(chave, data);
+    } catch (erro) {
+      if (!(erro instanceof ErroBanco) || !erro.semRede) throw erro;
+      this.banco.marcarRede(false);
+      const guardado = await this.banco.lerGuardado(chave);
+      if (!guardado) throw erro;
+      data = guardado.linhas;
+    }
     return data ? this.banco.paraDoc(this.nome, data) : { id: this.id, exists: false, data: () => undefined };
   }
 
@@ -951,7 +1191,7 @@ class Documento {
     const linha = this.banco.paraLinha(this.nome, this.id, dados);
     const { error } = await this.banco.cliente.from(m.tabela)
       .upsert(linha, { onConflict: m.chave ? "user_id," + m.chave : "user_id", defaultToNull: false });
-    if (error) throw new ErroBanco(error);
+    if (error) { const e = new ErroBanco(error); if (e.semRede) this.banco.marcarRede(false); throw e; }
     this.banco.avisar(this.nome);
   }
 
@@ -962,14 +1202,14 @@ class Documento {
     delete linha.user_id;
     if (m.chave) delete linha[m.chave];
     const { error } = await this.filtrar(this.banco.cliente.from(m.tabela).update(linha));
-    if (error) throw new ErroBanco(error);
+    if (error) { const e = new ErroBanco(error); if (e.semRede) this.banco.marcarRede(false); throw e; }
     this.banco.avisar(this.nome);
   }
 
   async delete() {
     const m = this.banco.mapa(this.nome);
     const { error } = await this.filtrar(this.banco.cliente.from(m.tabela).delete());
-    if (error) throw new ErroBanco(error);
+    if (error) { const e = new ErroBanco(error); if (e.semRede) this.banco.marcarRede(false); throw e; }
     this.banco.avisar(this.nome);
   }
 
@@ -1283,6 +1523,7 @@ function escutarReembolsos() {
 let gerandoFixas = false;
 let gerarDeNovo = false;
 async function gerarContasFixas() {
+  if (estado.banco && !estado.banco.conectado()) return; // gera quando a conexão voltar
   if (gerandoFixas) { gerarDeNovo = true; return; }
   if (!estado.carregouFixas || !estado.carregouCartoes || estado.config === null) return;
   if (!estado.contasFixas.some(c => c.ativa)) return;
@@ -1349,7 +1590,7 @@ async function gravarComSeguranca(acao, mensagemErro) {
     return true;
   } catch (erro) {
     console.error(erro);
-    const motivo = erro && erro.code === "quota_exceeded" ? " O banco do app está cheio." : " Verifique a conexão e tente de novo.";
+    const motivo = erro && erro.semRede ? " Sem internet: isso só pode ser feito com conexão." : erro && erro.code === "quota_exceeded" ? " O banco do app está cheio." : " Verifique a conexão e tente de novo.";
     mostrarAviso(mensagemErro + motivo, null);
     return false;
   }
@@ -1640,6 +1881,7 @@ function desenharLista() {
       html += "<button type=\"button\" class=\"item" + (l.status === "prevista" ? " prevista" : "") + "\" data-id=\"" + escapar(l.id) + "\">" +
         "<span class=\"cor\" style=\"background:" + escapar(c.cor) + "\"></span>" +
         "<span class=\"texto\"><span class=\"desc\">" + (l.status === "prevista" ? "<span class=\"selo prevista\">Prevista</span>" : "") +
+        (l.pendenteEnvio ? "<span class=\"selo pendente\">Aguardando envio</span>" : "") +
         (l.reembolso || l.reembolsoDe ? "<span class=\"selo reemb\">" + ((l.reembolso ? l.reembolso.quem : l.reembolsoDe) === "vigor" ? "Vigor" : "Paola") + "</span>" : "") +
         escapar(l.descricao) + "</span><br><span class=\"meta\">" +
         escapar(c.nome) + " · " + escapar(cartaoPorId(l.cartaoId)?.nome || FORMAS[l.formaPagamento] || l.formaPagamento) +
@@ -1777,6 +2019,8 @@ function atualizarPrevia() {
 }
 
 async function abrirForm(lanc) {
+  if (lanc && lanc.pendenteEnvio) { mostrarAviso("Aguardando envio: dá para editar depois que este lançamento subir para o banco.", null); return; }
+  if (lanc && estado.banco && !estado.banco.conectado()) { mostrarAviso("Sem internet: editar e excluir só com conexão. Lançamentos novos funcionam normalmente.", null); return; }
   form.editando = lanc || null;
   form.grupo = [];
   // Parcela: busca as outras parcelas da mesma compra para editar a compra inteira
@@ -1945,14 +2189,29 @@ async function salvarForm(evento) {
 
   const botao = $("salvarLanc");
   botao.disabled = true;
-  const ok = await gravarComSeguranca(() => substituirLancamentos(antigos, novos), anterior ? "Não consegui salvar a alteração." : "Não consegui salvar o lançamento.");
+  let guardadoNoAparelho = false;
+  const ok = await gravarComSeguranca(async () => {
+    if (!anterior && estado.banco && !estado.banco.conectado()) { await estado.banco.enfileirar("lancamentos", novos); guardadoNoAparelho = true; return; }
+    try {
+      await substituirLancamentos(antigos, novos);
+    } catch (erro) {
+      // Caiu a conexão no meio: lançamento novo vai para a fila (o mesmo código não duplica ao enviar)
+      if (!anterior && erro && erro.semRede) { await estado.banco.enfileirar("lancamentos", novos); guardadoNoAparelho = true; return; }
+      throw erro;
+    }
+  }, anterior ? "Não consegui salvar a alteração." : "Não consegui salvar o lançamento.");
   botao.disabled = false;
   if (!ok) return;
   const texto = anterior && anterior.status === "prevista" ? "Pagamento de " + descricao + " confirmado: " + formatarReais(centavos)
     : anterior ? "Alteração salva"
     : nParcelas > 1 ? "Compra de " + formatarReais(centavos) + " em " + nParcelas + "x salva"
       : (form.tipo === "receita" ? "Receita" : "Despesa") + " de " + formatarReais(centavos) + " salva";
-  mostrarAviso(texto, () => substituirLancamentos(novos, antigos));
+  if (guardadoNoAparelho) {
+    mostrarAviso("Sem internet: " + (nParcelas > 1 ? "compra de " + formatarReais(centavos) + " em " + nParcelas + "x" : (form.tipo === "receita" ? "receita" : "despesa") + " de " + formatarReais(centavos)) +
+      " guardada no aparelho. Será enviada quando a conexão voltar.", null);
+  } else {
+    mostrarAviso(texto, () => substituirLancamentos(novos, antigos));
+  }
   // Vai para o mês em que o lançamento (ou a 1ª parcela) conta
   if (primeira !== estado.mes) mudarMes(primeira);
   fecharForm();
@@ -2134,6 +2393,29 @@ async function atribuirCartao(e) {
 
 /* ---------- Aviso com "Desfazer" ---------- */
 let temporizadorAviso = null;
+function dataHoraCurta(iso) {
+  try { return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; }
+}
+
+function desenharAvisoRede(enviadosAgora) {
+  const banco = estado.banco;
+  const caixa = $("avisoRede");
+  if (!banco || !caixa) return;
+  const n = banco.quantosAguardando();
+  const qtd = n === 1 ? "1 lançamento aguardando envio." : n + " lançamentos aguardando envio.";
+  let texto = "";
+  if (!banco.conectado()) {
+    texto = "Sem internet." + (banco.dadosDe ? " Mostrando os dados salvos neste aparelho em " + dataHoraCurta(banco.dadosDe) + "." : "") +
+      " Lançamentos novos ficam guardados e são enviados quando a conexão voltar." + (n ? " " + qtd : "");
+  } else if (n) {
+    texto = banco.enviando ? "Enviando " + qtd.replace(" aguardando envio.", "") + " guardados no aparelho…" : qtd + " Tentando enviar de novo em instantes.";
+  }
+  caixa.textContent = texto;
+  caixa.hidden = !texto;
+  caixa.classList.toggle("offline", !banco.conectado());
+  if (enviadosAgora) mostrarAviso(enviadosAgora === 1 ? "1 lançamento guardado no aparelho foi enviado ao banco." : enviadosAgora + " lançamentos guardados no aparelho foram enviados ao banco.", null);
+}
+
 function mostrarAviso(texto, desfazer) {
   $("avisoTexto").textContent = texto;
   const botao = $("avisoDesfazer");
@@ -2557,6 +2839,7 @@ async function apagarCopia(id) {
 }
 
 async function copiaAutomaticaSemanal() {
+  if (!estado.banco.conectado()) return;
   try {
     const copias = await listarCopias();
     estado.copias = copias;
@@ -2612,6 +2895,7 @@ async function baixarArquivo(nome, conteudo) {
 }
 
 async function baixarBackup() {
+  if (!estado.banco.conectado()) { mostrarAviso("Sem internet: o backup completo precisa de conexão.", null); return; }
   const botao = $("botaoBackup");
   botao.disabled = true;
   botao.textContent = "Preparando backup…";
@@ -2639,6 +2923,7 @@ function linhaCsv(campos) {
 }
 
 async function exportarCsv() {
+  if (!estado.banco.conectado()) { mostrarAviso("Sem internet: a exportação precisa de conexão.", null); return; }
   const de = $("csvDe").value;
   const ate = $("csvAte").value;
   if (!de || !ate || de > ate) { mostrarAviso("Escolha o período: o mês inicial precisa vir antes do final.", null); return; }
@@ -2671,6 +2956,7 @@ async function exportarCsv() {
 
 /* ---------- Restaurar ou importar backup ---------- */
 async function lerArquivoBackup(arquivo) {
+  if (!estado.banco.conectado()) { mostrarAviso("Sem internet: restaurar um backup precisa de conexão.", null); $("arquivoBackup").value = ""; return; }
   $("painelRestauracao").hidden = false;
   $("painelRestauracao").innerHTML = "<span class=\"mudo\">Lendo o arquivo e comparando com o app…</span>";
   let dados;
@@ -3065,6 +3351,11 @@ async function iniciar() {
   });
   estado.cliente = cliente;
   ligarEventosAcesso();
+  // Sem internet: não espera a renovação da sessão (a biblioteca insiste por até 30 s); abre direto com a sessão guardada
+  if (navigator.onLine === false && !veioDaRecuperacao) {
+    const guardadaOffline = sessaoGuardada();
+    if (guardadaOffline) { abrirApp(guardadaOffline); return; }
+  }
   const { data } = await cliente.auth.getSession();
   if (location.hash) history.replaceState(null, "", location.pathname + location.search); // tira os dados do link da barra
   if (erroNoLink) {
@@ -3074,7 +3365,32 @@ async function iniciar() {
   }
   if (veioDaRecuperacao && data && data.session) { pedirNovaSenha(); return; }
   if (data && data.session) { posLogin(); return; }
+  // Sem internet e a sessão expirou: abre com a sessão completa (senha + código) já guardada neste aparelho.
+  // Só vale para quem entrou aqui antes e não tocou em Sair; os dados vêm da cópia do aparelho.
+  const guardada = navigator.onLine === false || !(await temConexao()) ? sessaoGuardada() : null;
+  if (guardada) { abrirApp(guardada); return; }
   pedirLogin();
+}
+
+// Teste rápido de conexão com o Supabase (sem dados, só para saber se há rede)
+async function temConexao() {
+  try {
+    const r = await fetch(SUPABASE_URL + "/auth/v1/health", { method: "GET", headers: { apikey: SUPABASE_CHAVE_PUBLICA }, cache: "no-store" });
+    return r.status > 0;
+  } catch (e) { return false; }
+}
+
+// Sessão salva pelo Supabase neste aparelho, se for completa (aal2)
+function sessaoGuardada() {
+  try {
+    const bruto = localStorage.getItem("sb-vktqyguhdgawstlbvwkh-auth-token");
+    if (!bruto) return null;
+    const s = JSON.parse(bruto);
+    const sessao = s && s.currentSession ? s.currentSession : s;
+    const carga = JSON.parse(atob(sessao.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    if (carga.aal !== "aal2" || !sessao.user || sessao.user.id !== carga.sub) return null;
+    return { user: sessao.user, access_token: sessao.access_token };
+  } catch (e) { return null; }
 }
 
 /* ---------- Acesso: login, verificação em duas etapas, recuperação de senha ---------- */
@@ -3119,7 +3435,14 @@ function ligarEventosAcesso() {
   const cliente = estado.cliente;
   document.querySelectorAll(".olho").forEach(b => b.addEventListener("click", () => alternarOlho(b, b.getAttribute("aria-pressed") !== "true")));
   document.querySelectorAll('#telaLogin [data-acao="sair"]').forEach(b => b.addEventListener("click", async () => { await cliente.auth.signOut(); location.reload(); }));
-  $("botaoSair").addEventListener("click", async () => { await cliente.auth.signOut(); location.reload(); });
+  // Sair apaga do aparelho a cópia dos dados; com lançamentos aguardando envio, não deixa sair (para não perder nada)
+  $("botaoSair").addEventListener("click", async () => {
+    if (estado.banco && estado.banco.quantosAguardando()) { mostrarAviso("Há lançamentos aguardando envio. Conecte-se à internet para enviá-los antes de sair.", null); return; }
+    if (navigator.onLine === false) { mostrarAviso("Sem internet: para sair, conecte-se primeiro.", null); return; }
+    await cliente.auth.signOut();
+    if (estado.banco) await estado.banco.limparLocal();
+    location.reload();
+  });
 
   $("formLogin").addEventListener("submit", async e => {
     e.preventDefault();
@@ -3266,6 +3589,13 @@ function abrirApp(sessao) {
   estado.banco = new Banco(estado.cliente, sessao.user.id);
   estado.raiz = estado.banco;
   $("infoConta").textContent = "Conectado como " + sessao.user.email + ", com verificação em duas etapas.";
+  // Sem internet: aviso no topo, fila de lançamentos do aparelho e envio automático quando a conexão voltar
+  estado.banco.aoMudar = desenharAvisoRede;
+  estado.banco.carregarFila().then(() => { estado.banco.avisar("lancamentos", 0); estado.banco.enviarFila(); });
+  setInterval(() => { if (estado.banco.quantosAguardando() && navigator.onLine !== false) estado.banco.enviarFila(); }, 30000);
+  // Com internet: guarda todos os lançamentos no aparelho, alguns segundos depois de abrir (sem atrasar a tela)
+  setTimeout(() => estado.banco.guardarTudoParaUsoSemInternet(), 4000);
+  desenharAvisoRede();
   escutarCategorias();
   escutarCartoes();
   escutarFixas();
@@ -3279,6 +3609,9 @@ function abrirApp(sessao) {
   escutarPorData();
 }
 
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("sw.js").catch(e => console.warn("Sem service worker:", e && e.message));
+}
 iniciar();
 </script>
 </body>
