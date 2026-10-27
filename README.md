@@ -45,7 +45,7 @@ App pessoal de controle financeiro de Rafael de Freitas: receitas, despesas, car
 1. Configuração (formas de pagamento, paleta, categorias iniciais)
 2. Regras de cálculo, sem tela: centavos, competência pela fatura do cartão, parcelas, totais, reembolsos
 3. Acesso ao banco: camada `Banco` que traduz as coleções do app para as tabelas do Supabase (`lancamentos`, `categorias`, `cartoes`, `contas_fixas`, `orcamentos`, `geracoes`, `backups`, `config`)
-4. Telas: Início, Lançamentos, Fixas e cartões, Ajustes, formulário
+4. Telas: Início, Lançamentos, Análise, Planejar (faturas, contas fixas e cartões), Ajustes, formulário (desde a versão 20)
 5. Gráficos e gestão: orçamento por média de 6 meses, comprometido futuro, backup JSON, exportação CSV, importação
 6. Tema claro/escuro e botão + arrastável
 7. Inicialização e login

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-9OBUzskMIPMBlIanwzbriZtHpKmXXRd+MykH6Od0OMA='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-ZSIoV5uu3K6/0QaewCAc3TeCCB8hmClRVfbSAvPajx4='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 19 (Entrega 6), 26/10/2026: funciona sem internet (lançamentos novos ficam no aparelho e sobem quando a conexão volta). Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 20 (redesenho, etapa 1), 27/10/2026: nova navegação com o + no centro, telas Análise e Planejar, lista e Ajustes sem textos cortados. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -343,6 +343,34 @@ select.filtro { width: auto; min-width: 170px; }
 .aviso-rede { margin: 8px 16px 0; padding: 10px 14px; border-radius: 12px; font-size: .9rem; background: var(--surface-2); color: var(--fg); border: 1px dashed var(--previsto); }
 .aviso-rede.offline { border-style: solid; border-color: var(--despesa); }
 .selo.pendente { background: transparent; color: var(--despesa); border: 1px dashed var(--despesa); }
+/* ===== Redesenho, etapa 1 (v20) ===== */
+/* O + flutuante sai: o + fica no centro da barra (celular) e no topo do menu (notebook) */
+.fab { display: none !important; }
+main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom, 0px)); }
+.nav { grid-template-columns: repeat(5, 1fr); }
+.nav .so-notebook { display: none; }
+.nav .nav-novo { align-self: center; justify-self: center; width: 52px; height: 52px; border-radius: 16px; background: var(--accent); color: var(--accent-fg); }
+.nav .nav-novo svg { width: 26px; height: 26px; }
+.nav .nav-novo span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.nav button span { white-space: nowrap; }
+@media (min-width: 900px) {
+  main { padding-block: 24px 48px; }
+  .nav { grid-template-columns: 1fr; }
+  .so-celular { display: none !important; }
+  .nav .so-notebook { display: grid; margin-top: 12px; }
+  .nav .nav-novo { order: -1; width: auto; height: 48px; justify-self: stretch; margin-bottom: 10px; justify-content: center; font-weight: 700; }
+  .nav .nav-novo span { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+}
+/* Lista: descrição numa linha, detalhes abaixo (podem quebrar), valor sempre inteiro à direita */
+.item .texto br { display: none; }
+.item .desc { display: block; }
+.item .meta { display: block; white-space: normal; overflow: visible; margin-top: 2px; }
+.item .valor { white-space: nowrap; align-self: start; padding-top: 1px; }
+/* Ajustes: nomes inteiros no celular */
+.cat { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 6px; }
+.cat .botao.texto { padding: 0 6px; font-size: 14px; }
+#listaOrcamento .cat { grid-template-columns: 22px minmax(0, 1fr) auto; }
+#listaOrcamento .cat input.orc-valor { width: 132px; flex: none; padding-inline: 6px; }
 /* Tela de login */
 .login { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: var(--bg); }
 .login[hidden], .app[hidden] { display: none; }
@@ -448,21 +476,28 @@ select.filtro { width: auto; min-width: 170px; }
       <strong id="mesAtual" class="num">—</strong>
       <button type="button" id="mesSeguinte" aria-label="Próximo mês">›</button>
     </div>
+    <button type="button" class="tema so-celular" id="botaoAjustesTopo" aria-label="Ajustes" title="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     <button type="button" class="tema" id="botaoTema" aria-label="Tema: automático" title="Tema: automático"></button></div>
   </header>
   <div class="aviso-rede" id="avisoRede" role="status" hidden></div>
 
   <nav class="nav" aria-label="Telas">
     <button type="button" data-tela="inicio" aria-current="page">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Início</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Início</span>
     </button>
     <button type="button" data-tela="lancamentos">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>Lançamentos</span>
     </button>
-    <button type="button" data-tela="cartoes">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg><span>Fixas e cartões</span>
+    <button type="button" class="nav-novo" id="navNovo" aria-label="Novo lançamento">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Novo lançamento</span>
     </button>
-    <button type="button" data-tela="ajustes">
+    <button type="button" data-tela="analise">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Análise</span>
+    </button>
+    <button type="button" data-tela="cartoes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span>Planejar</span>
+    </button>
+    <button type="button" data-tela="ajustes" class="so-notebook">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Ajustes</span>
     </button>
   </nav>
@@ -495,6 +530,20 @@ select.filtro { width: auto; min-width: 170px; }
       </div>
       <div class="lembrete" id="lembreteBackup" hidden><span>O backup deste mês ainda não foi baixado. Guarde uma cópia no Google Drive.</span><button type="button" class="botao" id="irBackup">Ir para o backup</button></div>
       <div class="lembrete" id="avisoTransicao" hidden><span>Mês de transição: as compras no crédito da fatura que venceu em outubro já estão em setembro (histórico pela data da compra), e as de outubro caem em novembro (regra da fatura). Por isso outubro aparece abaixo do real. Para ver o que foi comprado no mês, use Lançamentos &gt; Ver por: Data da compra.</span></div>
+    </section>
+
+    <!-- ===== Tela: Análise ===== -->
+    <section id="tela-analise" class="tela" hidden>
+      <div class="cabecalho-tela">
+        <h1>Análise do mês</h1>
+        <div class="filtros-inicio linha" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <div class="chaves" role="group" aria-label="Visão">
+            <button type="button" data-visao="pessoal" aria-pressed="true">Visão pessoal</button>
+            <button type="button" data-visao="bruta" aria-pressed="false">Visão bruta</button>
+          </div>
+          <label class="interruptor"><input type="checkbox" id="comKmsAnalise" checked> Incluir Paytrack KMs</label>
+        </div>
+      </div>
       <div class="graficos">
         <div class="cartao">
           <div class="grafico-topo"><h2>Receitas x despesas, 12 meses</h2></div>
@@ -554,7 +603,7 @@ select.filtro { width: auto; min-width: 170px; }
 
     <!-- ===== Tela: Cartões ===== -->
     <section id="tela-cartoes" class="tela" hidden>
-      <div class="cabecalho-tela"><h1>Contas fixas e cartões</h1></div>
+      <div class="cabecalho-tela"><h1>Planejar: faturas, contas fixas e cartões</h1></div>
       <div class="secao">
         <span class="rotulo" id="tituloFaturas">Faturas do mês</span>
         <div class="faturas" id="listaFaturas"></div>
@@ -638,11 +687,11 @@ select.filtro { width: auto; min-width: 170px; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Entrega 4 de 4: lançamentos, categorias, dashboard, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup e exportação.</span>
+          <span>Versão 20 (redesenho, etapa 1): lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
-          <span>O botão + pode ser arrastado para qualquer lugar da tela. <button type="button" class="botao texto" id="resetarBotao">Voltar o botão + para o canto</button></span>
+          <button type="button" id="resetarBotao" hidden></button>
         </div>
       </div>
     </section>
@@ -1720,10 +1769,11 @@ function desenhar() {
   $("botaoNovo").hidden = false;
   $("mesAtual").textContent = rotuloMes(estado.mes);
   document.querySelectorAll(".tela").forEach(t => { t.hidden = t.id !== "tela-" + estado.tela; });
-  document.querySelectorAll(".nav button").forEach(b => {
+  document.querySelectorAll(".nav button[data-tela]").forEach(b => {
     if (b.dataset.tela === estado.tela) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
   });
   if (estado.tela === "inicio") desenharInicio();
+  if (estado.tela === "analise") desenharAnalise();
   if (estado.tela === "lancamentos") desenharLista();
   if (estado.tela === "ajustes") desenharAjustes();
   if (estado.tela === "cartoes") desenharCartoes();
@@ -1768,12 +1818,20 @@ function desenharInicio() {
   $("kVariacaoDet").textContent = (media ? "Média 6 meses " + formatarReais(media) : "Sem meses anteriores") +
     (vAnterior === null ? "" : " · mês anterior " + sinal(vAnterior));
 
+  $("avisoTransicao").hidden = estado.mes !== "2026-10";
+  desenharBackupInfo();
+}
+
+/* ---------- Análise (etapa 1: os mesmos gráficos de antes, em tela própria) ---------- */
+function desenharAnalise() {
+  const doMes = lancamentosDoMes();
+  document.querySelectorAll("[data-visao]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.visao === "pessoal") === estado.pessoal)));
+  $("comKms").checked = estado.incluirKms;
+  $("comKmsAnalise").checked = estado.incluirKms;
   desenharGraficoMeses();
   desenharGraficoCategorias(doMes);
   desenharOrcado(doMes);
-  $("avisoTransicao").hidden = estado.mes !== "2026-10";
   desenharGraficoFuturo();
-  desenharBackupInfo();
 }
 
 /* ---------- Lançamentos ---------- */
@@ -2246,7 +2304,7 @@ async function carregarCreditoSemCartao() {
   try {
     const foto = await colecaoLancamentos().where("formaPagamento", "==", "credito").limit(1000).get();
     estado.semCartao = foto.docs.map(d => ({ id: d.id, ...d.data() }))
-      .filter(l => l.tipo === "despesa" && !l.cartaoId)
+      .filter(l => l.tipo === "despesa" && !l.cartaoId && l.data >= "2026-10-01")
       .sort((a, b) => b.data.localeCompare(a.data));
   } catch (erro) {
     estado.semCartao = [];
@@ -2583,6 +2641,7 @@ function escutarOrcamentos() {
       estado.orcamentos = {};
       for (const d of foto.docs) estado.orcamentos[d.id] = d.data().valorPlanejadoCentavos || 0;
       if (estado.tela === "inicio") desenharInicio();
+      if (estado.tela === "analise") desenharAnalise();
       if (estado.tela === "ajustes") desenharOrcamentoAjustes();
     },
     () => {}
@@ -2681,7 +2740,7 @@ function escutarFuturo() {
     .where("competencia", "<=", somarMeses(estado.mes, 6))
     .limit(1000);
   estado.desligarFuturo = consulta.onSnapshot(
-    foto => { estado.futuro = foto.docs.map(d => ({ id: d.id, ...d.data() })); if (estado.tela === "inicio") desenharGraficoFuturo(); },
+    foto => { estado.futuro = foto.docs.map(d => ({ id: d.id, ...d.data() })); if (estado.tela === "analise") desenharGraficoFuturo(); },
     () => {}
   );
 }
@@ -3157,7 +3216,9 @@ function ligarArrasteBotao() {
    6. INICIALIZAÇÃO
    ===================================================================== */
 function ligarEventos() {
-  document.querySelectorAll(".nav button").forEach(b => b.addEventListener("click", () => irPara(b.dataset.tela)));
+  document.querySelectorAll(".nav button[data-tela]").forEach(b => b.addEventListener("click", () => irPara(b.dataset.tela)));
+  $("navNovo").addEventListener("click", () => { if (!$("botaoNovo").hidden) abrirForm(null); });
+  $("botaoAjustesTopo").addEventListener("click", () => irPara("ajustes"));
   $("mesAnterior").addEventListener("click", () => mudarMes(somarMeses(estado.mes, -1)));
   $("mesSeguinte").addEventListener("click", () => mudarMes(somarMeses(estado.mes, 1)));
   ligarArrasteBotao();
@@ -3223,7 +3284,7 @@ function ligarEventos() {
   document.querySelectorAll("[data-visao]").forEach(b => b.addEventListener("click", () => {
     estado.pessoal = b.dataset.visao === "pessoal";
     lembrar.gravar("visaoPessoal", estado.pessoal);
-    desenharInicio();
+    desenhar();
   }));
   $("formNovoCartao").addEventListener("submit", async e => {
     e.preventDefault();
@@ -3279,7 +3340,9 @@ function ligarEventos() {
   }));
 
   // Início
-  $("comKms").addEventListener("change", e => { estado.incluirKms = e.target.checked; lembrar.gravar("incluirKms", estado.incluirKms); desenharInicio(); });
+  for (const idKms of ["comKms", "comKmsAnalise"]) {
+    $(idKms).addEventListener("change", e => { estado.incluirKms = e.target.checked; lembrar.gravar("incluirKms", estado.incluirKms); $("comKms").checked = estado.incluirKms; $("comKmsAnalise").checked = estado.incluirKms; desenhar(); });
+  }
   document.querySelectorAll("[data-formato]").forEach(b => b.addEventListener("click", () => {
     estado.formatoCategorias = b.dataset.formato;
     lembrar.gravar("formatoCategorias", estado.formatoCategorias);
@@ -3322,18 +3385,19 @@ function ligarEventos() {
   }));
 
   // Redesenha os gráficos quando o aparelho troca entre claro e escuro
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (estado.tela === "inicio") desenharInicio(); });
-  new MutationObserver(() => { if (estado.tela === "inicio") desenharInicio(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (estado.tela === "analise") desenharAnalise(); });
+  new MutationObserver(() => { if (estado.tela === "analise") desenharAnalise(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 }
 
 async function iniciar() {
   estado.tela = lembrar.ler("tela", "inicio");
-  if (!["inicio", "lancamentos", "cartoes", "ajustes"].includes(estado.tela)) estado.tela = "inicio";
+  if (!["inicio", "lancamentos", "analise", "cartoes", "ajustes"].includes(estado.tela)) estado.tela = "inicio";
   estado.incluirKms = lembrar.ler("incluirKms", true);
   estado.formatoCategorias = lembrar.ler("formatoCategorias", "barras");
   estado.pessoal = lembrar.ler("visaoPessoal", true) !== false;
   estado.verPor = lembrar.ler("verPor", "fatura") === "compra" ? "compra" : "fatura";
   $("comKms").checked = estado.incluirKms;
+  $("comKmsAnalise").checked = estado.incluirKms;
   aplicarTema(lembrar.ler("tema", "auto"));
   ligarEventos();
   restaurarPosicaoBotao();

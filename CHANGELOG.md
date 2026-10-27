@@ -2,6 +2,7 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 20 | 27/10/2026 | Redesenho, etapa 1: barra com Início, Lançamentos, + no centro, Análise e Planejar (no notebook, menu lateral com "Novo lançamento" no topo); gráficos na nova tela Análise; Ajustes pelo ícone do topo no celular; lista sem texto sobre o valor; nomes inteiros em Ajustes; compras no crédito sem cartão anteriores a 01/10/2026 tratadas como histórico; sai o + arrastável |
 | 19 | 26/10/2026 | Entrega 6: funciona sem internet. Abre pelo atalho da tela de início (service worker, manifesto e ícone), mostra os dados guardados no aparelho, lançamentos novos ficam na fila "aguardando envio" e sobem sozinhos quando a conexão volta; editar, excluir, backup e restauração exigem conexão |
 | 18 | 25/10/2026 | Entrega 5.8: verificação em duas etapas (Google Authenticator) exigida também pelo banco, esqueci a senha, olho na senha, regra de senha forte, CSP, bibliotecas servidas pelo próprio site, bloqueio em iframe |
 | 17 | 25/10/2026 | Entrega 5: dados no Supabase com login por e-mail e senha, publicação no GitHub Pages, restauração de backup em lote e no primeiro acesso, download pelo navegador |
