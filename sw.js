@@ -1,11 +1,11 @@
-/* Controle Financeiro: service worker (Entrega 6; versão 21).
+/* Controle Financeiro: service worker (Entrega 6; versão 22).
    Guarda no aparelho os arquivos do app para ele abrir mesmo sem internet.
    - Página (index.html): busca na internet primeiro (para receber versões novas) e usa a cópia se não houver rede.
    - Bibliotecas, ícones e manifesto: usa a cópia guardada e atualiza em segundo plano.
    - Dados do Supabase NÃO passam por aqui (outro endereço): ficam no IndexedDB, cuidados pelo próprio app.
    Ao publicar uma versão nova, troque VERSAO para o aparelho baixar tudo de novo. */
-const VERSAO = "cf-v21";
-const ARQUIVOS = ["./", "./index.html", "./lib/chart.umd.js", "./lib/supabase.js", "./manifest.webmanifest",
+const VERSAO = "cf-v22";
+const ARQUIVOS = ["./", "./index.html", "./lib/supabase.js", "./manifest.webmanifest",
   "./icone-192.png", "./icone-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", evento => {

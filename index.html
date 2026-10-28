@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-xANHn/JlSi1iqa0p+kHxKsAda/q7iR8hGJQoQdG1BfM='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-sYImBcZbiqZs+hFV4gF6gIg6x0epvfErqRaFanMAuEA='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 21 (redesenho, etapa 2), 27/10/2026: novo Início (livre para gastar, ritmo do mês, onde mais gastei, próximos 15 dias) e contas fixas em lista com edição ao tocar. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 22 (redesenho, etapa 3), 28/10/2026: tela Análise com filtros de período, visão, Paytrack KMs e categorias, e gráficos desenhados pelo próprio app. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -438,6 +438,33 @@ main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom
 .form-fixa input, .form-fixa select { min-height: 44px; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 10px; width: 100%; }
 .form-fixa .largo { grid-column: 1 / -1; }
 .form-fixa .botao.primario { min-height: 50px; }
+/* ===== Redesenho, etapa 3 (v22) ===== */
+.filtros-analise { display: grid; gap: 10px; margin-bottom: 14px; }
+.seg-rolagem { overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.seg-rolagem button { white-space: nowrap; }
+.linha-filtro { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.chips-cat { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chip { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 38px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 0 14px; font-size: 14px; color: var(--muted); white-space: nowrap; }
+.chip[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg); font-weight: 600; }
+.kpis-analise { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+@media (min-width: 900px) { .kpis-analise { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.grade-analise { display: grid; gap: 14px; margin-bottom: 14px; min-width: 0; }
+@media (min-width: 900px) { .grade-analise { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grade-analise .larga { grid-column: 1 / -1; } }
+.grafico { width: 100%; height: auto; display: block; overflow: visible; }
+.grafico .alvo { cursor: pointer; }
+.legenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+.legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.legenda i { display: inline-block; width: 12px; height: 8px; border-radius: 2px; }
+.legenda i.linha { height: 0; width: 16px; border-top: 2px solid var(--fg); border-radius: 0; }
+.legenda i.linha.tracejada { border-top: 2px dashed var(--previsto); }
+.legenda i.claro { background: var(--accent); opacity: .4; }
+.info-toque { font-size: 13px; color: var(--muted); margin: 8px 0 0; min-height: 1.4em; }
+.hb-trilho .ant { position: absolute; top: -2px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--surface); border: 2px solid var(--muted); }
+.hb-trilho .marca { position: absolute; top: -4px; width: 2px; height: 16px; margin-left: -1px; border-radius: 1px; background: var(--fg); }
+.hb-trilho i.alerta { background: var(--despesa); }
+.tag-alerta { margin-left: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; border-radius: 6px; padding: 1px 6px; color: var(--despesa); background: color-mix(in srgb, var(--despesa) 14%, transparent); flex: none; }
+div.hb { cursor: default; }
+#analiseCsv { margin-bottom: 8px; }
 /* Tela de login */
 .login { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: var(--bg); }
 .login[hidden], .app[hidden] { display: none; }
@@ -614,42 +641,49 @@ main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom
 
     <!-- ===== Tela: Análise ===== -->
     <section id="tela-analise" class="tela" hidden>
-      <div class="cabecalho-tela">
-        <h1>Análise do mês</h1>
-        <div class="filtros-inicio linha" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <div class="cabecalho-tela"><h1>Análise</h1><span class="mudo num" id="anPeriodoTxt"></span></div>
+      <div class="cartao filtros-analise">
+        <div class="chaves seg-rolagem" role="group" aria-label="Período" id="anPeriodo">
+          <button type="button" data-periodo="1" aria-pressed="false">Mês</button>
+          <button type="button" data-periodo="3" aria-pressed="false">3 meses</button>
+          <button type="button" data-periodo="6" aria-pressed="true">6 meses</button>
+          <button type="button" data-periodo="12" aria-pressed="false">12 meses</button>
+          <button type="button" data-periodo="ano" aria-pressed="false">No ano</button>
+        </div>
+        <div class="linha-filtro">
           <div class="chaves" role="group" aria-label="Visão">
-            <button type="button" data-visao="pessoal" aria-pressed="true">Visão pessoal</button>
-            <button type="button" data-visao="bruta" aria-pressed="false">Visão bruta</button>
+            <button type="button" data-visao="pessoal" aria-pressed="true">Pessoal</button>
+            <button type="button" data-visao="bruta" aria-pressed="false">Bruta</button>
           </div>
           <label class="interruptor"><input type="checkbox" id="comKmsAnalise" checked> Incluir Paytrack KMs</label>
         </div>
+        <div class="chips-cat" role="group" aria-label="Categorias de despesa" id="anCatsChips"></div>
       </div>
-      <div class="graficos">
-        <div class="cartao">
-          <div class="grafico-topo"><h2>Receitas x despesas, 12 meses</h2></div>
-          <div class="area-grafico"><canvas id="gMeses" aria-label="Gráfico de receitas e despesas dos últimos 12 meses"></canvas></div>
+      <div class="kpis-analise" id="anKpis"></div>
+      <div class="grade-analise">
+        <div class="cartao larga">
+          <div class="cartao-topo"><h2>Resultado mês a mês</h2><span class="mudo">saldo = receitas − despesas</span></div>
+          <svg class="grafico" id="gResultado" role="img" aria-label="Saldo, receitas e despesas por mês"></svg>
+          <div class="legenda"><span><i style="background:var(--receita)"></i>Saldo positivo</span><span><i style="background:var(--despesa)"></i>Saldo negativo</span><span><i class="linha"></i>Receitas</span><span><i class="linha tracejada"></i>Despesas</span></div>
+          <p class="info-toque num" id="gResultadoInfo">Toque num mês para ver os valores.</p>
         </div>
         <div class="cartao">
-          <div class="grafico-topo">
-            <h2>Despesas por categoria</h2>
-            <div class="chaves" role="group" aria-label="Formato do gráfico">
-              <button type="button" data-formato="barras" aria-pressed="true">Barras</button>
-              <button type="button" data-formato="rosca" aria-pressed="false">Rosca</button>
-            </div>
-          </div>
-          <div class="area-grafico alto"><canvas id="gCategorias" aria-label="Gráfico de despesas por categoria"></canvas></div>
-          <p class="dica">Toque numa categoria para ver os lançamentos dela.</p>
+          <div class="cartao-topo"><h2>Despesas por categoria</h2><span class="mudo" id="anAntTxt"></span></div>
+          <div class="hbars" id="anCategorias"></div>
         </div>
         <div class="cartao">
-          <div class="grafico-topo"><h2>Orçado x realizado</h2></div>
-          <div id="listaOrcado"></div>
+          <div class="cartao-topo"><h2 id="anOrcTitulo">Orçado x realizado</h2><span class="mudo" id="anOrcMarca"></span></div>
+          <div class="hbars" id="anOrcado"></div>
+          <p class="dica" id="anOrcDica"></p>
         </div>
-        <div class="cartao">
-          <div class="grafico-topo"><h2>Comprometido nos próximos 6 meses</h2></div>
-          <div class="area-grafico"><canvas id="gFuturo" aria-label="Gráfico do que já está comprometido nos próximos 6 meses"></canvas></div>
-          <p class="dica">Parcelas e compras já lançadas, mais as contas fixas pelo valor médio.</p>
+        <div class="cartao larga">
+          <div class="cartao-topo"><h2>Comprometido nos próximos 6 meses</h2><span class="mudo" id="gFuturoTxt"></span></div>
+          <svg class="grafico" id="gFuturo" role="img" aria-label="Valores já comprometidos nos próximos seis meses"></svg>
+          <div class="legenda"><span><i style="background:var(--accent)"></i>Parcelas</span><span><i style="background:var(--previsto)"></i>Contas fixas</span><span><i class="claro"></i>Outras já lançadas</span></div>
+          <p class="info-toque num" id="gFuturoInfo">Parcelas e compras já lançadas, mais as contas fixas pelo valor médio. Toque num mês para ver os valores.</p>
         </div>
       </div>
+      <button type="button" class="botao" id="analiseCsv">Exportar CSV deste filtro</button>
     </section>
 
     <!-- ===== Tela: Lançamentos ===== -->
@@ -768,7 +802,7 @@ main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 21 (redesenho, etapa 2): lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 22 (redesenho, etapa 3): lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -873,7 +907,6 @@ main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom
 
 <div class="aviso" id="aviso" role="status" hidden><span id="avisoTexto"></span><button type="button" id="avisoDesfazer">Desfazer</button></div>
 
-<script src="lib/chart.umd.js"></script>
 <script src="lib/supabase.js"></script>
 <script>
 if (window.top !== window.self) { document.documentElement.textContent = ""; throw new Error("O app não pode ser aberto dentro de outro site."); }
@@ -1988,16 +2021,163 @@ function desenharInicio() {
   desenharBackupInfo();
 }
 
-/* ---------- Análise (etapa 1: os mesmos gráficos de antes, em tela própria) ---------- */
+/* ---------- Análise (v22): filtros e gráficos desenhados em SVG ---------- */
+const analise = { periodo: "6", cats: new Set() };
+const SVGNS = "http://www.w3.org/2000/svg";
+function rotuloCurto(c) { return nomeMesBarra.format(new Date(c + "-01T00:00:00Z")).replace(".", "") + "/" + c.slice(2, 4); }
+function milhares(c) { const v = c / 100; return (v < 0 ? "-" : "") + (Math.abs(v) >= 1000 ? (Math.abs(v) / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mil" : Math.round(Math.abs(v)).toLocaleString("pt-BR")); }
+function mesesAnalise() {
+  const primeiro = estado.lancamentos.reduce((m, l) => (l.competencia < m ? l.competencia : m), estado.mes);
+  const n = analise.periodo === "ano" ? Number(estado.mes.slice(5, 7)) : Number(analise.periodo);
+  const ms = [];
+  for (let i = n - 1; i >= 0; i--) ms.push(somarMeses(estado.mes, -i));
+  return { ms: ms.filter(m => m >= primeiro), primeiro };
+}
+function despesasDoMesFiltradas(m) {
+  let d = 0;
+  for (const l of estado.lancamentos) if (l.competencia === m && l.tipo === "despesa" && (!analise.cats.size || analise.cats.has(l.categoriaId))) d += valorDespesa(l, estado.pessoal);
+  return d;
+}
 function desenharAnalise() {
-  const doMes = lancamentosDoMes();
   document.querySelectorAll("[data-visao]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.visao === "pessoal") === estado.pessoal)));
+  document.querySelectorAll("[data-periodo]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.periodo === analise.periodo)));
   $("comKms").checked = estado.incluirKms;
   $("comKmsAnalise").checked = estado.incluirKms;
-  desenharGraficoMeses();
-  desenharGraficoCategorias(doMes);
-  desenharOrcado(doMes);
-  desenharGraficoFuturo();
+  const { ms, primeiro } = mesesAnalise();
+  $("anPeriodoTxt").textContent = ms.length > 1 ? rotuloCurto(ms[0]) + " a " + rotuloCurto(ms.at(-1)) : rotuloCurto(ms[0]);
+  // Categorias (chips): as de despesa com gasto nos meses carregados
+  const usadas = new Set(estado.lancamentos.filter(l => l.tipo === "despesa").map(l => l.categoriaId));
+  for (const id of [...analise.cats]) if (!usadas.has(id)) analise.cats.delete(id);
+  const cats = estado.categorias.filter(c => c.tipo === "despesa" && usadas.has(c.id));
+  $("anCatsChips").innerHTML = "<button type=\"button\" class=\"chip\" data-cat=\"\" aria-pressed=\"" + (analise.cats.size === 0) + "\">Todas as categorias</button>" +
+    cats.map(c => "<button type=\"button\" class=\"chip\" data-cat=\"" + escapar(c.id) + "\" aria-pressed=\"" + analise.cats.has(c.id) + "\"><i class=\"ponto\" style=\"background:" + escapar(c.cor) + "\"></i>" + escapar(c.nome) + "</button>").join("");
+  // Totais por mês
+  const opc = { incluirKms: estado.incluirKms, pessoal: estado.pessoal };
+  const rec = ms.map(m => totais(estado.lancamentos.filter(l => l.competencia === m), opc).receitas);
+  const des = ms.map(despesasDoMesFiltradas);
+  const sal = rec.map((r, i) => r - des[i]);
+  const somaR = rec.reduce((a, b) => a + b, 0), somaD = des.reduce((a, b) => a + b, 0);
+  const vermelho = sal.filter(v => v < 0).length;
+  $("anKpis").innerHTML = [
+    ["Receitas", formatarReais(somaR), "receita"],
+    [analise.cats.size ? "Despesas filtradas" : "Despesas", formatarReais(somaD), "despesa"],
+    ["Saldo", (somaR - somaD < 0 ? "-" : "") + formatarReais(Math.abs(somaR - somaD)), somaR - somaD < 0 ? "despesa" : ""],
+    ["Meses no vermelho", vermelho + " de " + ms.length, ""]
+  ].map(k => "<div class=\"mini\"><span class=\"rotulo\">" + k[0] + "</span><span class=\"v num " + k[2] + "\">" + k[1] + "</span></div>").join("");
+  desenharResultado(ms, rec, des, sal);
+  // Categorias no período, com o período anterior (quando há dados)
+  const ant = ms.map(m => somarMeses(m, -ms.length));
+  const temAnt = ant[0] >= primeiro && ant[0] >= somarMeses(estado.mes, -11);
+  $("anAntTxt").textContent = temAnt ? "○ " + (ant.length > 1 ? rotuloCurto(ant[0]) + " a " + rotuloCurto(ant.at(-1)) : rotuloCurto(ant[0])) : "sem período anterior com dados";
+  const somaCat = lista => { const o = new Map(); for (const l of estado.lancamentos) if (l.tipo === "despesa" && lista.includes(l.competencia)) o.set(l.categoriaId, (o.get(l.categoriaId) || 0) + valorDespesa(l, estado.pessoal)); return o; };
+  const atual = somaCat(ms), anterior = temAnt ? somaCat(ant) : new Map();
+  const linhas = [...atual.entries()].filter(([id, v]) => v > 0 && (!analise.cats.size || analise.cats.has(id))).sort((x, y) => y[1] - x[1]);
+  const maior = Math.max(1, ...linhas.map(([id, v]) => Math.max(v, anterior.get(id) || 0)));
+  $("anCategorias").innerHTML = linhas.length ? linhas.map(([id, v]) => {
+    const c = categoriaPorId(id), a = anterior.get(id) || 0;
+    const varTxt = temAnt && a > 0 ? " · " + (v >= a ? "▲ " : "▼ ") + Math.abs(Math.round((v - a) / a * 100)) + "% sobre o anterior" : "";
+    return "<button type=\"button\" class=\"hb\" data-ircat=\"" + escapar(id) + "\"><span class=\"hb-nome\"><i class=\"ponto\" style=\"background:" + escapar(c.cor) + "\"></i><span>" + escapar(c.nome) + "</span></span>" +
+      "<span class=\"hb-valor num\">" + formatarReais(v) + "</span><span class=\"hb-trilho\"><i style=\"width:" + Math.max(1, v / maior * 100).toFixed(1) + "%\"></i>" +
+      (temAnt ? "<span class=\"ant\" style=\"left:" + (a / maior * 100).toFixed(1) + "%\"></span>" : "") + "</span>" +
+      "<span class=\"hb-meta num\">" + Math.round(v / Math.max(1, somaD) * 100) + "% do total" + varTxt + "</span></button>";
+  }).join("") : "<p class=\"dica\">Nenhuma despesa no período.</p>";
+  desenharOrcadoAnalise();
+  desenharComprometido();
+}
+function desenharResultado(ms, rec, des, sal) {
+  const svg = $("gResultado");
+  const W = Math.max(300, Math.round(svg.getBoundingClientRect().width) || 720), H = W < 500 ? 230 : 260, L = 46, R = 12, T = 12, B = 28;
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  const maxV = Math.max(1, ...rec, ...des) * 1.08, minV = Math.min(0, ...sal) * 1.25;
+  const y = v => T + (maxV - v) / (maxV - minV) * (H - T - B);
+  const bw = (W - L - R) / ms.length, x = i => L + bw * i + bw / 2;
+  const alvo = (maxV - minV) / 5, potencia = Math.pow(10, Math.floor(Math.log10(alvo))), passo = [1, 2, 5, 10].map(k => k * potencia).find(p => p >= alvo);
+  const grade = cor("--line"), eixo = cor("--previsto"), texto = cor("--muted"), verde = cor("--receita"), vermelho = cor("--despesa"), fundo = cor("--surface"), tinta = cor("--fg");
+  let h = "";
+  for (let v = Math.ceil(minV / passo) * passo; v <= maxV; v += passo) {
+    h += "<line x1=\"" + L + "\" x2=\"" + (W - R) + "\" y1=\"" + y(v).toFixed(1) + "\" y2=\"" + y(v).toFixed(1) + "\" stroke=\"" + (v === 0 ? eixo : grade) + "\" stroke-width=\"" + (v === 0 ? 1.3 : 1) + "\"/>" +
+      "<text x=\"" + (L - 6) + "\" y=\"" + (y(v) + 4).toFixed(1) + "\" text-anchor=\"end\" font-size=\"11\" fill=\"" + texto + "\">" + milhares(v) + "</text>";
+  }
+  const larg = Math.min(28, bw * 0.5);
+  sal.forEach((v, i) => { h += "<rect x=\"" + (x(i) - larg / 2).toFixed(1) + "\" y=\"" + y(Math.max(0, v)).toFixed(1) + "\" width=\"" + larg.toFixed(1) + "\" height=\"" + Math.max(2, Math.abs(y(v) - y(0))).toFixed(1) + "\" rx=\"4\" fill=\"" + (v >= 0 ? verde : vermelho) + "\" fill-opacity=\"0.85\"/>"; });
+  if (ms.length > 1) {
+    const linha = (arr, corL, tracejada) => "<path d=\"" + arr.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join("") + "\" fill=\"none\" stroke=\"" + corL + "\" stroke-width=\"2\"" + (tracejada ? " stroke-dasharray=\"5 4\"" : "") + "/>";
+    h += linha(rec, tinta) + linha(des, eixo, true);
+  }
+  const u = ms.length - 1;
+  h += "<circle cx=\"" + x(u).toFixed(1) + "\" cy=\"" + y(rec[u]).toFixed(1) + "\" r=\"4.5\" fill=\"" + tinta + "\" stroke=\"" + fundo + "\" stroke-width=\"2\"/>" +
+    "<circle cx=\"" + x(u).toFixed(1) + "\" cy=\"" + y(des[u]).toFixed(1) + "\" r=\"4\" fill=\"" + eixo + "\" stroke=\"" + fundo + "\" stroke-width=\"2\"/>";
+  const cada = ms.length > 6 && W < 600 ? 2 : 1;
+  ms.forEach((m, i) => { if ((u - i) % cada === 0) h += "<text x=\"" + x(i).toFixed(1) + "\" y=\"" + (H - 8) + "\" text-anchor=\"middle\" font-size=\"11\" fill=\"" + texto + "\">" + rotuloCurto(m) + "</text>"; });
+  ms.forEach((m, i) => { h += "<rect class=\"alvo\" data-i=\"" + i + "\" x=\"" + (L + bw * i).toFixed(1) + "\" y=\"" + T + "\" width=\"" + bw.toFixed(1) + "\" height=\"" + (H - T - B) + "\" fill=\"transparent\"/>"; });
+  svg.innerHTML = h;
+  const info = $("gResultadoInfo");
+  info.textContent = "Toque num mês para ver os valores.";
+  svg.onclick = e => {
+    const r = e.target.closest(".alvo");
+    if (!r) return;
+    const i = Number(r.dataset.i);
+    info.textContent = rotuloCurto(ms[i]) + ": receitas " + formatarReais(rec[i]) + " · despesas " + formatarReais(des[i]) + " · saldo " + (sal[i] < 0 ? "-" : "") + formatarReais(Math.abs(sal[i]));
+  };
+}
+function desenharOrcadoAnalise() {
+  const { lista, qtdMeses } = orcamentosDoMes();
+  const doMes = lancamentosDoMes();
+  const real = {};
+  for (const l of doMes) if (l.tipo === "despesa") real[l.categoriaId] = (real[l.categoriaId] || 0) + valorDespesa(l, estado.pessoal);
+  const mesHoje = competenciaDeHoje(), atual = estado.mes === mesHoje, transicao = estado.mes === "2026-10", passado = estado.mes < mesHoje;
+  const ritmo = atual ? Number(dataDeHoje().slice(8, 10)) / diasNoMes(estado.mes) : 1;
+  const comMarca = (atual && !transicao) || passado;
+  $("anOrcTitulo").textContent = "Orçado x realizado, " + rotuloCurto(estado.mes);
+  $("anOrcMarca").textContent = comMarca ? (atual ? "| ritmo de hoje" : "| 100% do orçado") : transicao ? "mês de transição" : "";
+  const filtra = id => !analise.cats.size || analise.cats.has(id);
+  const linhas = Object.entries(lista).filter(([id]) => (real[id] || 0) > 0 && filtra(id)).map(([id, o]) => ({ id, o, r: real[id] })).sort((x, y) => y.r / y.o.plano - x.r / x.o.plano);
+  const semGasto = Object.keys(lista).filter(id => !(real[id] > 0) && filtra(id)).length;
+  $("anOrcado").innerHTML = linhas.length ? linhas.map(({ id, o, r }) => {
+    const c = categoriaPorId(id), p = r / o.plano;
+    const acima = atual && !transicao ? p > ritmo + 0.03 : p > 1;
+    const tag = acima ? " <span class=\"tag-alerta\">" + (atual && !transicao ? "ACIMA DO RITMO" : "PASSOU DO ORÇADO") + "</span>" : "";
+    return "<div class=\"hb\"><span class=\"hb-nome\"><i class=\"ponto\" style=\"background:" + escapar(c.cor) + "\"></i><span>" + escapar(c.nome) + "</span></span>" +
+      "<span class=\"hb-valor num\">" + Math.round(p * 100) + "%</span><span class=\"hb-trilho\"><i class=\"" + (acima ? "alerta" : "") + "\" style=\"width:" + Math.min(100, p * 100).toFixed(1) + "%\"></i>" +
+      (comMarca ? "<b class=\"marca\" style=\"left:" + (ritmo * 100).toFixed(1) + "%\"></b>" : "") + "</span>" +
+      "<span class=\"hb-meta num\">" + formatarReais(r) + " de " + formatarReais(o.plano) + (o.manual ? " (meta manual)" : "") + tag + "</span></div>";
+  }).join("") : "<p class=\"dica\">Nenhuma categoria com gasto neste mês.</p>";
+  $("anOrcDica").textContent = (semGasto ? semGasto + (semGasto === 1 ? " categoria orçada ainda sem gasto neste mês. " : " categorias orçadas ainda sem gasto neste mês. ") : "") +
+    "Orçamento = média dos " + (qtdMeses === 6 ? "6 meses anteriores" : qtdMeses + " meses anteriores com histórico") + ", ou a meta manual de Ajustes. Visão " + (estado.pessoal ? "pessoal" : "bruta") + ".";
+}
+function desenharComprometido() {
+  const { meses, porMes } = calcularComprometido();
+  const svg = $("gFuturo");
+  const W = Math.max(300, Math.round(svg.getBoundingClientRect().width) || 720), H = 220, L = 46, R = 12, T = 22, B = 28;
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  const tot = meses.map(m => porMes[m].parcelas + porMes[m].fixas + porMes[m].outras);
+  const passo = Math.max(...tot) > 1000000 ? 500000 : 200000;
+  const topo = Math.max(passo, Math.ceil(Math.max(...tot) / passo) * passo);
+  const y = v => T + (topo - v) / topo * (H - T - B), bw = (W - L - R) / meses.length;
+  const grade = cor("--line"), eixo = cor("--previsto"), texto = cor("--muted"), tinta = cor("--fg"), acc = cor("--accent");
+  let h = "";
+  for (let v = 0; v <= topo; v += passo) h += "<line x1=\"" + L + "\" x2=\"" + (W - R) + "\" y1=\"" + y(v).toFixed(1) + "\" y2=\"" + y(v).toFixed(1) + "\" stroke=\"" + (v ? grade : eixo) + "\"/>" +
+    "<text x=\"" + (L - 6) + "\" y=\"" + (y(v) + 4).toFixed(1) + "\" text-anchor=\"end\" font-size=\"11\" fill=\"" + texto + "\">" + milhares(v) + "</text>";
+  meses.forEach((m, i) => {
+    const p = porMes[m], cx = L + bw * i + bw / 2, w = Math.min(44, bw * 0.55);
+    let base = 0;
+    for (const [v, corB, op] of [[p.parcelas, acc, 1], [p.fixas, eixo, 1], [p.outras, acc, 0.4]]) {
+      if (v > 0) h += "<rect x=\"" + (cx - w / 2).toFixed(1) + "\" y=\"" + y(base + v).toFixed(1) + "\" width=\"" + w.toFixed(1) + "\" height=\"" + Math.max(1, y(base) - y(base + v) - 2).toFixed(1) + "\" fill=\"" + corB + "\" fill-opacity=\"" + op + "\"/>";
+      base += v;
+    }
+    h += "<text x=\"" + cx.toFixed(1) + "\" y=\"" + (y(tot[i]) - 6).toFixed(1) + "\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"600\" fill=\"" + tinta + "\">" + milhares(tot[i]) + "</text>" +
+      "<text x=\"" + cx.toFixed(1) + "\" y=\"" + (H - 8) + "\" text-anchor=\"middle\" font-size=\"11\" fill=\"" + texto + "\">" + rotuloCurto(m) + "</text>" +
+      "<rect class=\"alvo\" data-i=\"" + i + "\" x=\"" + (L + bw * i).toFixed(1) + "\" y=\"0\" width=\"" + bw.toFixed(1) + "\" height=\"" + (H - B) + "\" fill=\"transparent\"/>";
+  });
+  svg.innerHTML = h;
+  $("gFuturoTxt").textContent = "a partir de " + rotuloCurto(meses[0]);
+  const info = $("gFuturoInfo");
+  svg.onclick = e => {
+    const r = e.target.closest(".alvo");
+    if (!r) return;
+    const m = meses[Number(r.dataset.i)], p = porMes[m];
+    info.textContent = rotuloCurto(m) + ": parcelas " + formatarReais(p.parcelas) + " · contas fixas " + formatarReais(p.fixas) + " · outras " + formatarReais(p.outras) + " · total " + formatarReais(p.parcelas + p.fixas + p.outras);
+  };
 }
 
 /* ---------- Lançamentos ---------- */
@@ -2963,7 +3143,7 @@ function escutarFuturo() {
     .where("competencia", "<=", somarMeses(estado.mes, 6))
     .limit(1000);
   estado.desligarFuturo = consulta.onSnapshot(
-    foto => { estado.futuro = foto.docs.map(d => ({ id: d.id, ...d.data() })); { if (estado.tela === "analise") desenharGraficoFuturo(); if (estado.tela === "inicio") desenharInicio(); if (estado.tela === "cartoes") desenharFixas(); } },
+    foto => { estado.futuro = foto.docs.map(d => ({ id: d.id, ...d.data() })); { if (estado.tela === "analise") desenharAnalise(); if (estado.tela === "inicio") desenharInicio(); if (estado.tela === "cartoes") desenharFixas(); } },
     () => {}
   );
 }
@@ -3204,16 +3384,18 @@ function linhaCsv(campos) {
   }).join(";");
 }
 
-async function exportarCsv() {
+async function exportarCsv(filtroAnalise) {
   if (!estado.banco.conectado()) { mostrarAviso("Sem internet: a exportação precisa de conexão.", null); return; }
-  const de = $("csvDe").value;
-  const ate = $("csvAte").value;
+  const filtro = filtroAnalise && filtroAnalise.de ? filtroAnalise : null; // o clique em Ajustes passa o evento, não um filtro
+  const de = filtro ? filtro.de : $("csvDe").value;
+  const ate = filtro ? filtro.ate : $("csvAte").value;
   if (!de || !ate || de > ate) { mostrarAviso("Escolha o período: o mês inicial precisa vir antes do final.", null); return; }
-  const botao = $("botaoCsv");
+  const botao = filtro ? filtro.botao : $("botaoCsv");
   botao.disabled = true;
   try {
     const todos = await lerTodosLancamentos();
     const lista = todos.filter(l => l.competencia >= de && l.competencia <= ate)
+      .filter(l => !filtro || !filtro.cats.size || (l.tipo === "despesa" && filtro.cats.has(l.categoriaId)))
       .sort((a, b) => a.competencia.localeCompare(b.competencia) || a.data.localeCompare(b.data));
     const valor = c => (c < 0 ? "-" : "") + centavosParaTexto(Math.abs(c));
     const linhas = [linhaCsv(["Data", "Competência", "Tipo", "Descrição", "Categoria", "Forma de pagamento", "Cartão", "Parcela", "Status", "Valor (R$)", "Reembolso", "Valor reembolsável (R$)", "Observação"])];
@@ -3227,7 +3409,7 @@ async function exportarCsv() {
       ]));
     }
     // BOM no início: o Excel abre acentos corretamente
-    const ok = await baixarArquivo("lancamentos-" + de + "-a-" + ate + ".csv", "﻿" + linhas.join("\r\n"));
+    const ok = await baixarArquivo("lancamentos-" + de + "-a-" + ate + (filtro && filtro.cats.size ? "-categorias" : "") + ".csv", "﻿" + linhas.join("\r\n"));
     if (ok) mostrarAviso(lista.length + " lançamentos exportados.", null);
   } catch (erro) {
     mostrarAviso("Não consegui exportar. Tente de novo.", null);
@@ -3491,6 +3673,28 @@ function ligarEventos() {
     irPara("lancamentos");
   });
   $("irAnalise").addEventListener("click", () => irPara("analise"));
+  // Análise: período, categorias, toque na categoria e CSV
+  document.querySelectorAll("[data-periodo]").forEach(b => b.addEventListener("click", () => { analise.periodo = b.dataset.periodo; lembrar.gravar("periodoAnalise", analise.periodo); desenharAnalise(); }));
+  $("anCatsChips").addEventListener("click", e => {
+    const b = e.target.closest("[data-cat]");
+    if (!b) return;
+    const id = b.dataset.cat;
+    if (!id) analise.cats.clear(); else if (analise.cats.has(id)) analise.cats.delete(id); else analise.cats.add(id);
+    desenharAnalise();
+  });
+  $("anCategorias").addEventListener("click", e => {
+    const b = e.target.closest("[data-ircat]");
+    if (!b) return;
+    estado.filtroTipo = "despesa";
+    estado.filtroCategoria = b.dataset.ircat;
+    estado.busca = "";
+    $("busca").value = "";
+    irPara("lancamentos");
+  });
+  $("analiseCsv").addEventListener("click", () => {
+    const { ms } = mesesAnalise();
+    exportarCsv({ de: ms[0], ate: ms.at(-1), cats: new Set(analise.cats), botao: $("analiseCsv") });
+  });
   $("irPlanejar").addEventListener("click", () => irPara("cartoes"));
   $("pendInicio").addEventListener("click", () => { estado.filtroTipo = "todos"; estado.filtroCategoria = ""; estado.busca = ""; $("busca").value = ""; irPara("lancamentos"); });
   $("formNovaFixa").addEventListener("submit", async e => {
@@ -3637,6 +3841,7 @@ async function iniciar() {
   if (!["inicio", "lancamentos", "analise", "cartoes", "ajustes"].includes(estado.tela)) estado.tela = "inicio";
   estado.incluirKms = lembrar.ler("incluirKms", true);
   estado.formatoCategorias = lembrar.ler("formatoCategorias", "barras");
+  analise.periodo = ["1", "3", "6", "12", "ano"].includes(lembrar.ler("periodoAnalise", "6")) ? lembrar.ler("periodoAnalise", "6") : "6";
   estado.pessoal = lembrar.ler("visaoPessoal", true) !== false;
   estado.verPor = lembrar.ler("verPor", "fatura") === "compra" ? "compra" : "fatura";
   $("comKms").checked = estado.incluirKms;
