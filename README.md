@@ -5,7 +5,7 @@ App pessoal de controle financeiro de Rafael de Freitas: receitas, despesas, car
 ## Como roda hoje (Entrega 5, a partir de out/2026)
 
 - O app é um único arquivo, `index.html` (HTML, CSS e JavaScript, sem framework), publicado no GitHub Pages.
-- Banco de dados e login no [Supabase](https://supabase.com/docs) (PostgreSQL, região São Paulo, plano Free), com a biblioteca oficial `@supabase/supabase-js` 2.45.4 (servida pelo próprio site, em `lib/`).
+- Banco de dados e login no [Supabase](https://supabase.com/docs) (PostgreSQL, região São Paulo, plano Free), com a biblioteca oficial `@supabase/supabase-js` 2.117.3 (desde a versão 24), servida pelo próprio site, em `lib/`.
 - Login por e-mail e senha + verificação em duas etapas (TOTP, Google Authenticator), com um único usuário; o cadastro de novas contas está desligado no painel.
 - Cada tabela tem Row Level Security (RLS) forçada: cada pessoa logada só lê e grava as próprias linhas; sem login não há acesso.
 - A chave do Supabase no código é a publishable, feita para ficar em código público. A secret key e a senha do banco nunca entram no repositório.
