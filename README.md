@@ -9,7 +9,7 @@ App pessoal de controle financeiro de Rafael de Freitas: receitas, despesas, car
 - Login por e-mail e senha + verificação em duas etapas (TOTP, Google Authenticator), com um único usuário; o cadastro de novas contas está desligado no painel.
 - Cada tabela tem Row Level Security (RLS) forçada: cada pessoa logada só lê e grava as próprias linhas; sem login não há acesso.
 - A chave do Supabase no código é a publishable, feita para ficar em código público. A secret key e a senha do banco nunca entram no repositório.
-- Gráficos desenhados pelo próprio app em SVG (desde a versão 22). O [Chart.js 4.4.1](https://www.chartjs.org/docs/latest/) em `lib/` fica sem uso até ser removido.
+- Gráficos desenhados pelo próprio app em SVG (desde a versão 22). O Chart.js foi removido do repositório em 28/10/2026.
 - Backup mensal automático no Google Drive por Google Apps Script (`backup-drive/Codigo.gs`); e-mail, senha e chave do autenticador ficam só nas Propriedades do script.
 - Scripts do banco na pasta `supabase/` (rodados no SQL Editor do Supabase, em ordem).
 
@@ -45,7 +45,7 @@ App pessoal de controle financeiro de Rafael de Freitas: receitas, despesas, car
 1. Configuração (formas de pagamento, paleta, categorias iniciais)
 2. Regras de cálculo, sem tela: centavos, competência pela fatura do cartão, parcelas, totais, reembolsos
 3. Acesso ao banco: camada `Banco` que traduz as coleções do app para as tabelas do Supabase (`lancamentos`, `categorias`, `cartoes`, `contas_fixas`, `orcamentos`, `geracoes`, `backups`, `config`)
-4. Telas: Início, Lançamentos, Análise, Planejar (faturas, contas fixas e cartões), Ajustes, formulário (desde a versão 20); Início com livre para gastar e contas fixas editadas numa folha (desde a versão 21); Análise com filtros e gráficos em SVG, sem Chart.js (desde a versão 22; a pasta lib/chart.umd.js fica sem uso até a aprovação)
+4. Telas: Início, Lançamentos, Análise, Planejar (faturas, contas fixas e cartões), Ajustes, formulário (desde a versão 20); Início com livre para gastar e contas fixas editadas numa folha (desde a versão 21); Análise com filtros e gráficos em SVG, sem Chart.js (desde a versão 22); lançamento rápido, tabela no notebook, parcelas em andamento e sugestão de valor médio (desde a versão 23)
 5. Gráficos e gestão: orçamento por média de 6 meses, comprometido futuro, backup JSON, exportação CSV, importação
 6. Tema claro/escuro e botão + arrastável
 7. Inicialização e login
