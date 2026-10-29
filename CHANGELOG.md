@@ -2,6 +2,8 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 30 | 29/10/2026 | Planejar: a conta fixa aparece só nos meses em que tem lançamento (pago ou previsto), com a situação real mesmo que hoje esteja desativada; nunca mais "sem lançamento"; desativada aparece só depois do último lançamento; conta nova começa no mês em que foi criada; ao reativar, as previstas voltam |
+| 29 | 29/10/2026 | Planejar: cada conta fixa aparece só a partir do mês do primeiro lançamento dela (pago ou previsto); antes disso não aparece mais "sem lançamento". Conta nova, ainda sem lançamento, aparece sempre |
 | 28 | 29/10/2026 | Planejar: o aviso em vermelho "Médio · último" e a sugestão de usar o último valor aparecem só nas contas fixas ainda previstas no mês; depois de confirmada (paga), o aviso some |
 | 27 | 28/10/2026 | Planejar: ao tocar numa conta fixa, a folha mostra a situação no mês escolhido (paga, com data e valor; prevista, com o valor médio; ou nenhum pagamento ligado) e o botão "Ver lançamento"; a legenda do valor médio ficou mais clara |
 | 26 | 28/10/2026 | Tocar no nome do mês (topo) abre a grade com os 12 meses do ano: escolhe o mês com um toque, muda o ano pelas setas e tem o atalho "Ir para o mês atual"; as setas continuam funcionando |

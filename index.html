@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-usoKRxsQWiVJ7+lby57M8CyFvYHz/mQKw5Mo7ynGk0I='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GgG9UDoTer95rg7Kv3R8bFrvVS15Th9YBc9eppSx8G0='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 28, 29/10/2026: o aviso "Médio · último" aparece só nas contas fixas ainda previstas no mês. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 30, 29/10/2026: em Planejar, a conta fixa aparece só nos meses com lançamento; desativada aparece só depois do último lançamento. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -871,7 +871,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 28: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 30: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -1756,12 +1756,41 @@ function cartaoPorId(id) {
 function colecaoFixas() { return estado.raiz.collection("contasFixas"); }
 function refConfig() { return estado.raiz.collection("config").doc("geral"); }
 
+// Primeiro mês de cada conta fixa (o lançamento mais antigo ligado a ela, pago ou previsto).
+// Também guarda a data do último lançamento (para mostrar "desativada" só depois dele).
+let chaveInicioFixas = "", desligarInicioFixas = null;
+function escutarInicioFixas() {
+  const ids = estado.contasFixas.map(c => c.id).sort();
+  const chave = ids.join(",");
+  if (chave === chaveInicioFixas) return;
+  chaveInicioFixas = chave;
+  if (desligarInicioFixas) { desligarInicioFixas(); desligarInicioFixas = null; }
+  if (!ids.length) { estado.inicioFixa = {}; return; }
+  desligarInicioFixas = colecaoLancamentos().where("contaFixaId", "in", ids).limit(50000).onSnapshot(
+    foto => {
+      const inicio = {}, fim = {};
+      for (const d of foto.docs) {
+        const l = d.data(), m = String(l.data || "").slice(0, 7);
+        if (!l.contaFixaId || !m) continue;
+        if (!inicio[l.contaFixaId] || m < inicio[l.contaFixaId]) inicio[l.contaFixaId] = m;
+        if (!fim[l.contaFixaId] || l.data > fim[l.contaFixaId]) fim[l.contaFixaId] = l.data;
+      }
+      const primeira = !estado.inicioFixa;
+      estado.inicioFixa = inicio; estado.fimFixa = fim;
+      if (primeira) gerarContasFixas();
+      if (estado.tela === "cartoes") desenharFixas();
+    },
+    () => { if (!estado.inicioFixa) { estado.inicioFixa = {}; estado.fimFixa = {}; gerarContasFixas(); } }
+  );
+}
+
 function escutarFixas() {
   colecaoFixas().onSnapshot(
     foto => {
       estado.contasFixas = foto.docs.map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (b.ativa - a.ativa) || a.diaVencimento - b.diaVencimento || a.descricao.localeCompare(b.descricao, "pt-BR"));
       estado.carregouFixas = true;
+      escutarInicioFixas();
       estado.mesesGerados.clear(); // conta nova ou alterada: confere de novo os meses abertos
       gerarContasFixas();
       if (estado.tela === "cartoes") desenharCartoes();
@@ -1798,6 +1827,7 @@ async function gerarContasFixas() {
   if (gerandoFixas) { gerarDeNovo = true; return; }
   if (!estado.carregouFixas || !estado.carregouCartoes || estado.config === null) return;
   if (!estado.contasFixas.some(c => c.ativa)) return;
+  if (!estado.inicioFixa) return; // gera depois de ler o primeiro mês de cada conta
   gerandoFixas = true;
   try {
     let desde = estado.config.fixasDesde;
@@ -1830,6 +1860,7 @@ async function gerarFixasDoMes(mes) {
   const agora = new Date().toISOString();
   for (const conta of estado.contasFixas.filter(c => c.ativa)) {
     if (feitas.includes(conta.id)) continue;
+    if (mes < competenciaDeHoje() && !estado.inicioFixa[conta.id]) continue; // conta nova: começa no mês em que foi criada
     const id = "fixa-" + conta.id + "-" + mes;
     const existente = await colecaoLancamentos().doc(id).get();
     if (!existente.exists) {
@@ -2826,18 +2857,26 @@ function desenharFixas() {
     if (!atual || l.data > atual.data) estado.ultimoPagoFixa[l.contaFixaId] = { data: l.data, valor: l.valorCentavos };
   }
   const desatualizado = f => { const u = estado.ultimoPagoFixa[f.id]; return f.ativa && u && f.valorEstimadoCentavos > 0 && Math.abs(u.valor - f.valorEstimadoCentavos) / f.valorEstimadoCentavos > 0.05 ? u : null; };
-  const contas = estado.contasFixas.slice().sort((x, y) => (y.ativa - x.ativa) || (x.diaVencimento - y.diaVencimento) || x.descricao.localeCompare(y.descricao));
+  const hojeC = competenciaDeHoje();
+  const aparece = f => {
+    if (doMesData.some(x => x.contaFixaId === f.id)) return true; // tem lançamento no mês
+    if (f.ativa || !estado.fimFixa) return false; // ativa sem lançamento no mês: não aparece
+    const fim = estado.fimFixa[f.id]; // desativada: só depois do último lançamento
+    return fim ? estado.mes > fim.slice(0, 7) : estado.mes >= hojeC;
+  };
+  const contas = estado.contasFixas.filter(aparece).sort((x, y) => (y.ativa - x.ativa) || (x.diaVencimento - y.diaVencimento) || x.descricao.localeCompare(y.descricao));
   $("listaFixas").innerHTML = contas.length ? contas.map(f => {
     const l = doMesData.find(x => x.contaFixaId === f.id);
-    const situacao = !f.ativa ? ["inativa", "desativada"] : !l ? ["sem", "sem lançamento em " + mesCurto] : l.status === "prevista" ? ["prev", "prevista em " + mesCurto] : ["paga", "paga em " + mesCurto];
+    const situacao = !l ? ["inativa", "desativada"] : l.status === "prevista" ? ["prev", "prevista em " + mesCurto] : ["paga", "paga em " + mesCurto];
     const onde = f.formaPagamento === "credito" ? (cartaoPorId(f.cartaoId)?.nome || "Crédito") : (FORMAS[f.formaPagamento] || f.formaPagamento);
-    return "<button type=\"button\" class=\"fixa-item" + (f.ativa ? "" : " inativa") + "\" data-id=\"" + escapar(f.id) + "\">" +
+    return "<button type=\"button\" class=\"fixa-item" + (l ? "" : " inativa") + "\" data-id=\"" + escapar(f.id) + "\">" +
       "<span class=\"dia-caixa\"><b class=\"num\">" + String(f.diaVencimento).padStart(2, "0") + "</b><small>dia</small></span>" +
       "<span class=\"fixa-t\"><span class=\"fixa-n\">" + escapar(f.descricao) + "</span><small>" + escapar(onde + " · " + categoriaPorId(f.categoriaId).nome) + "</small>" +
       (situacao[0] === "prev" && desatualizado(f) ? "<small class=\"aviso-medio num\">Médio " + formatarReais(f.valorEstimadoCentavos) + " · último " + formatarReais(desatualizado(f).valor) + "</small>" : "") + "</span>" +
       "<span class=\"fixa-v\"><span class=\"num\">" + formatarReais(l && l.status !== "prevista" ? l.valorCentavos : f.valorEstimadoCentavos) + "</span><small class=\"sit " + situacao[0] + "\">" + escapar(situacao[1]) + "</small></span>" +
       "<span class=\"seta\" aria-hidden=\"true\">›</span></button>";
-  }).join("") : "<div class=\"vazio\"><strong>Nenhuma conta fixa</strong><span>Toque em \"+ Nova conta fixa\".</span></div>";
+  }).join("") : estado.contasFixas.length ? "<div class=\"vazio\"><strong>Nenhuma conta fixa neste mês</strong><span>As contas aparecem a partir do mês do primeiro lançamento.</span></div>"
+    : "<div class=\"vazio\"><strong>Nenhuma conta fixa</strong><span>Toque em \"+ Nova conta fixa\".</span></div>";
   // Formulário antigo de nova conta (escondido): mantém as listas preenchidas
   const manter = (id, html) => { const v = $(id).value; $(id).innerHTML = html; if (v) $(id).value = v; };
   manter("nfForma", opcoesSelect(formas, "debito"));
@@ -2882,7 +2921,9 @@ function abrirFixa(conta) {
   } else if (previstos.length) {
     ver = previstos[0];
     texto = "Prevista para " + formatarDataCurta(ver.data) + ": " + formatarReais(ver.valorCentavos) + " (valor médio). Confirme quando pagar.";
-  } else texto = "Nenhum pagamento ligado a esta conta em " + nomeMes + ".";
+  } else if (!conta.ativa && estado.fimFixa && estado.fimFixa[conta.id]) texto = "Conta desativada. Último lançamento em " + formatarDataCurta(estado.fimFixa[conta.id]) + ".";
+  else if (!conta.ativa) texto = "Conta desativada.";
+  else texto = "Nenhum pagamento ligado a esta conta em " + nomeMes + ".";
   $("fxSituacao").hidden = !texto;
   $("fxSituacao").classList.toggle("paga", pagos.length > 0);
   $("fxSituacaoTexto").textContent = texto;
@@ -2956,6 +2997,16 @@ async function alternarFixa(conta) {
         const l = d.data();
         if (l.status === "prevista" && l.data.slice(0, 7) >= competenciaDeHoje()) await colecaoLancamentos().doc(d.id).delete();
       }
+    }
+    if (ativa) {
+      for (let i = 0; i <= 12; i++) {
+        const ref = estado.raiz.collection("geracoes").doc(somarMeses(competenciaDeHoje(), i));
+        const g = await ref.get();
+        const contas = g.exists ? (g.data().contas || []) : [];
+        if (contas.includes(conta.id)) await ref.set({ contas: contas.filter(x => x !== conta.id), atualizadoEm: new Date().toISOString() });
+      }
+      estado.mesesGerados.clear();
+      gerarContasFixas();
     }
   }, "Não consegui alterar a conta fixa.");
   if (ok) mostrarAviso(ativa ? conta.descricao + " reativada" : conta.descricao + " desativada; as previstas não confirmadas foram removidas", null);
