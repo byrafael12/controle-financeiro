@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-4jKZFKsH6stGyrzX7tTZzow/FfPFwaCzMKWhSnz9cj4='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-lWE3wJdsO82zUY2jthUZHCtvd+86iAsUpOWxjoiivPI='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 26, 28/10/2026: tocar no mês abre o calendário do ano para escolher o mês; o app abre sempre na tela Início. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 27, 28/10/2026: a conta fixa mostra se foi paga, está prevista ou sem lançamento no mês escolhido. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -442,6 +442,9 @@ main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom
 .fixa-v .sit { font-size: 11.5px; font-weight: 600; }
 .sit.paga { color: var(--receita); }
 .sit.prev, .sit.sem, .sit.inativa { color: var(--muted); }
+.situacao-fixa { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; color: var(--fg); }
+.situacao-fixa.paga { border-color: var(--receita); }
+.situacao-fixa b { font-weight: 700; }
 .fixa-item .seta { color: var(--muted); font-size: 18px; }
 #novaFixa { justify-self: start; }
 .form-fixa { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -868,7 +871,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 26: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 27: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -897,6 +900,7 @@ div.hb { cursor: default; }
   <div class="folha" role="dialog" aria-modal="true" aria-labelledby="tituloFixa">
     <div class="folha-topo"><h2 id="tituloFixa">Editar conta fixa</h2><button type="button" class="botao texto" id="fecharFixa">Fechar</button></div>
     <form id="formFixa" class="form-fixa" novalidate>
+      <div class="situacao-fixa largo" id="fxSituacao" hidden><span id="fxSituacaoTexto"></span><button type="button" class="botao" id="fxVerLanc" hidden>Ver lançamento</button></div>
       <label class="largo">Conta<input type="text" id="fxDescricao" maxlength="40" autocomplete="off"></label>
       <label>Dia<input type="number" id="fxDia" inputmode="numeric" min="1" max="31"></label>
       <label>Valor médio<input type="text" id="fxValor" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
@@ -904,7 +908,7 @@ div.hb { cursor: default; }
       <label id="fxCartaoCampo">Cartão<select id="fxCartao"></select></label>
       <label class="largo">Categoria<select id="fxCategoria"></select></label>
       <div class="sugestao-medio largo" id="fxSugestao" hidden><span id="fxSugestaoTexto"></span><button type="button" class="botao" id="fxUsarUltimo">Usar</button></div>
-      <p class="dica largo">O valor é uma média e o dia é só referência. Mudanças valem para os próximos meses.</p>
+      <p class="dica largo">Valor médio e dia de referência para os próximos meses. Salvar aqui não muda lançamentos já feitos.</p>
       <button type="submit" class="botao primario largo" id="fxSalvar">Salvar</button>
       <button type="button" class="botao texto largo" id="fxAlternar">Desativar conta</button>
     </form>
@@ -2795,17 +2799,22 @@ function opcoesSelect(lista, selecionado, vazio) {
     lista.map(([valor, texto]) => "<option value=\"" + escapar(valor) + "\"" + (valor === selecionado ? " selected" : "") + ">" + escapar(texto) + "</option>").join("");
 }
 
+function lancFixasDoMes() {
+  const vistos = new Set(), lista = [];
+  for (const l of estado.lancamentos.concat(estado.futuro || [])) {
+    if (vistos.has(l.id)) continue;
+    vistos.add(l.id);
+    if (l.contaFixaId && l.data.slice(0, 7) === estado.mes) lista.push(l);
+  }
+  return lista.sort((a, b) => a.data.localeCompare(b.data));
+}
+
 function desenharFixas() {
   const cartoesAtivos = estado.cartoes.filter(c => c.ativo).map(c => [c.id, c.nome]);
   const categorias = estado.categorias.filter(c => c.tipo === "despesa" && c.ativa).map(c => [c.id, c.nome]);
   const formas = Object.entries(FORMAS);
   // Situação de cada conta no mês escolhido (pela data do pagamento)
-  const vistos = new Set(), doMesData = [];
-  for (const l of estado.lancamentos.concat(estado.futuro || [])) {
-    if (vistos.has(l.id)) continue;
-    vistos.add(l.id);
-    if (l.contaFixaId && l.data.slice(0, 7) === estado.mes) doMesData.push(l);
-  }
+  const doMesData = lancFixasDoMes();
   const mesCurto = new Intl.DateTimeFormat("pt-BR", { month: "short", timeZone: "UTC" }).format(new Date(estado.mes + "-01T00:00:00Z")).replace(".", "");
   // Último valor pago de cada conta (para sugerir atualizar o valor médio)
   estado.ultimoPagoFixa = {};
@@ -2858,6 +2867,26 @@ function abrirFixa(conta) {
     $("fxUsarUltimo").textContent = "Usar " + formatarReais(ultimo.valor);
     $("fxUsarUltimo").dataset.valor = centavosParaTexto(ultimo.valor);
   }
+  // Situação no mês escolhido
+  const doMes = conta ? lancFixasDoMes().filter(l => l.contaFixaId === conta.id) : [];
+  const nomeMes = rotuloMes(estado.mes);
+  const pagos = doMes.filter(l => l.status !== "prevista"), previstos = doMes.filter(l => l.status === "prevista");
+  let texto = "", ver = null;
+  if (!conta) texto = "";
+  else if (pagos.length) {
+    ver = pagos[0];
+    texto = pagos.length === 1 ? "Paga em " + formatarDataCurta(ver.data) + ": " + formatarReais(ver.valorCentavos) + "."
+      : pagos.length + " pagamentos em " + nomeMes + ": " + formatarReais(pagos.reduce((t, l) => t + l.valorCentavos, 0)) + ".";
+  } else if (previstos.length) {
+    ver = previstos[0];
+    texto = "Prevista para " + formatarDataCurta(ver.data) + ": " + formatarReais(ver.valorCentavos) + " (valor médio). Confirme quando pagar.";
+  } else texto = "Nenhum pagamento ligado a esta conta em " + nomeMes + ".";
+  $("fxSituacao").hidden = !texto;
+  $("fxSituacao").classList.toggle("paga", pagos.length > 0);
+  $("fxSituacaoTexto").textContent = texto;
+  $("fxVerLanc").hidden = !ver;
+  $("fxVerLanc").textContent = ver && ver.status === "prevista" ? "Ver prevista" : "Ver lançamento";
+  $("fxVerLanc").dataset.id = ver ? ver.id : "";
   $("fxAlternar").hidden = !conta;
   $("fxAlternar").textContent = conta && !conta.ativa ? "Reativar conta" : "Desativar conta";
   $("fxSalvar").textContent = conta ? "Salvar" : "Adicionar conta";
@@ -3877,6 +3906,13 @@ function ligarEventos() {
   $("fecharFixa").addEventListener("click", fecharFixa);
   $("fundoFixa").addEventListener("click", e => { if (e.target === $("fundoFixa")) fecharFixa(); });
   $("fxForma").addEventListener("change", atualizarCartaoFixa);
+  $("fxVerLanc").addEventListener("click", e => {
+    const id = e.currentTarget.dataset.id;
+    const lanc = lancFixasDoMes().find(l => l.id === id);
+    if (!lanc) return;
+    fecharFixa();
+    abrirForm(lanc);
+  });
   $("fxUsarUltimo").addEventListener("click", e => { $("fxValor").value = e.currentTarget.dataset.valor; $("fxSugestao").hidden = true; $("fxValor").focus(); });
   $("formFixa").addEventListener("submit", salvarFixa);
   $("fxAlternar").addEventListener("click", async () => { const conta = fixaAberta; if (!conta) return; fecharFixa(); await alternarFixa(conta); });

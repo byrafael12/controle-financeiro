@@ -2,6 +2,7 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 27 | 28/10/2026 | Planejar: ao tocar numa conta fixa, a folha mostra a situação no mês escolhido (paga, com data e valor; prevista, com o valor médio; ou nenhum pagamento ligado) e o botão "Ver lançamento"; a legenda do valor médio ficou mais clara |
 | 26 | 28/10/2026 | Tocar no nome do mês (topo) abre a grade com os 12 meses do ano: escolhe o mês com um toque, muda o ano pelas setas e tem o atalho "Ir para o mês atual"; as setas continuam funcionando |
 | 25 | 28/10/2026 | O app abre sempre na tela Início (antes reabria na última tela usada) |
 | 24 | 28/10/2026 | Segurança (após a avaliação de 28/10): exportação CSV protegida contra fórmulas ao abrir no Excel (textos que começam com =, +, @, - ou tabulação recebem um apóstrofo); biblioteca `@supabase/supabase-js` atualizada de 2.45.4 para 2.117.3, que corrige o alerta GHSA-8r88-6cj9-9fh5 |
