@@ -2,6 +2,8 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 26 | 28/10/2026 | Tocar no nome do mês (topo) abre a grade com os 12 meses do ano: escolhe o mês com um toque, muda o ano pelas setas e tem o atalho "Ir para o mês atual"; as setas continuam funcionando |
+| 25 | 28/10/2026 | O app abre sempre na tela Início (antes reabria na última tela usada) |
 | 24 | 28/10/2026 | Segurança (após a avaliação de 28/10): exportação CSV protegida contra fórmulas ao abrir no Excel (textos que começam com =, +, @, - ou tabulação recebem um apóstrofo); biblioteca `@supabase/supabase-js` atualizada de 2.45.4 para 2.117.3, que corrige o alerta GHSA-8r88-6cj9-9fh5 |
 | 23 | 28/10/2026 | Redesenho, etapa 4 (com o ajuste 22.1): lançamento rápido (6 categorias mais usadas em botões e "Mais…", data Hoje, Ontem ou Outra, observação e reembolso em "Mais opções", Salvar sempre visível); lançamentos em tabela no notebook; faturas do mês em cartões compactos; parcelas em andamento com o total que falta pagar; sugestão de atualizar o valor médio da conta fixa quando o último pagamento difere mais de 5%; Análise abre em 3 meses e explica quando não há período anterior para comparar; Chart.js removido |
 | 22 | 28/10/2026 | Redesenho, etapa 3: tela Análise com filtros de período (mês, 3, 6, 12 meses, no ano), visão pessoal ou bruta, Paytrack KMs e categorias com seleção múltipla; resultado mês a mês (saldo e linhas de receitas e despesas), despesas por categoria com o período anterior, orçado x realizado com a marca do ritmo, comprometido em 6 meses; toque mostra os valores; CSV com o filtro ativo; gráficos desenhados pelo próprio app, sem o Chart.js; sai o gráfico Rosca |
