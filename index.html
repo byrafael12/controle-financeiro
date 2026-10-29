@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-GgG9UDoTer95rg7Kv3R8bFrvVS15Th9YBc9eppSx8G0='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-34MlMTyUcidfPODtcTfIYDngER7c9nXnlU+jKnCL5Pc='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 30, 29/10/2026: em Planejar, a conta fixa aparece só nos meses com lançamento; desativada aparece só depois do último lançamento. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 31, 29/10/2026: nova forma de pagamento MP Empréstimo (Mercado Crédito). Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -871,7 +871,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 30: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 31: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -943,7 +943,7 @@ div.hb { cursor: default; }
         <div class="campo"><label for="fForma">Forma de pagamento</label>
           <select id="fForma">
             <option value="credito">Crédito</option><option value="debito">Débito</option><option value="pix">Pix</option>
-            <option value="dinheiro">Dinheiro</option><option value="boleto">Boleto</option><option value="transferencia">Transferência</option>
+            <option value="dinheiro">Dinheiro</option><option value="boleto">Boleto</option><option value="transferencia">Transferência</option><option value="mp_emprestimo">MP Empréstimo</option>
           </select>
         </div>
       </div>
@@ -1506,7 +1506,7 @@ const VERSAO_ESQUEMA = 1;
 
 const FORMAS = {
   credito: "Crédito", debito: "Débito", pix: "Pix",
-  dinheiro: "Dinheiro", boleto: "Boleto", transferencia: "Transferência"
+  dinheiro: "Dinheiro", boleto: "Boleto", transferencia: "Transferência", mp_emprestimo: "MP Empréstimo"
 };
 
 // Paleta das categorias: cores médias, legíveis no modo claro e no escuro.

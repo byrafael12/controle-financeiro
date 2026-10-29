@@ -2,6 +2,7 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 31 | 29/10/2026 | Nova forma de pagamento "MP Empréstimo" (compras parceladas no Mercado Crédito, pagas com o saldo do Mercado Pago); não pede cartão e o mês é o da data |
 | 30 | 29/10/2026 | Planejar: a conta fixa aparece só nos meses em que tem lançamento (pago ou previsto), com a situação real mesmo que hoje esteja desativada; nunca mais "sem lançamento"; desativada aparece só depois do último lançamento; conta nova começa no mês em que foi criada; ao reativar, as previstas voltam |
 | 29 | 29/10/2026 | Planejar: cada conta fixa aparece só a partir do mês do primeiro lançamento dela (pago ou previsto); antes disso não aparece mais "sem lançamento". Conta nova, ainda sem lançamento, aparece sempre |
 | 28 | 29/10/2026 | Planejar: o aviso em vermelho "Médio · último" e a sugestão de usar o último valor aparecem só nas contas fixas ainda previstas no mês; depois de confirmada (paga), o aviso some |
