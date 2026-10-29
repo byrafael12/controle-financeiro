@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-lWE3wJdsO82zUY2jthUZHCtvd+86iAsUpOWxjoiivPI='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-usoKRxsQWiVJ7+lby57M8CyFvYHz/mQKw5Mo7ynGk0I='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 27, 28/10/2026: a conta fixa mostra se foi paga, está prevista ou sem lançamento no mês escolhido. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 28, 29/10/2026: o aviso "Médio · último" aparece só nas contas fixas ainda previstas no mês. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -871,7 +871,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 27: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 28: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -2834,7 +2834,7 @@ function desenharFixas() {
     return "<button type=\"button\" class=\"fixa-item" + (f.ativa ? "" : " inativa") + "\" data-id=\"" + escapar(f.id) + "\">" +
       "<span class=\"dia-caixa\"><b class=\"num\">" + String(f.diaVencimento).padStart(2, "0") + "</b><small>dia</small></span>" +
       "<span class=\"fixa-t\"><span class=\"fixa-n\">" + escapar(f.descricao) + "</span><small>" + escapar(onde + " · " + categoriaPorId(f.categoriaId).nome) + "</small>" +
-      (desatualizado(f) ? "<small class=\"aviso-medio num\">Médio " + formatarReais(f.valorEstimadoCentavos) + " · último " + formatarReais(desatualizado(f).valor) + "</small>" : "") + "</span>" +
+      (situacao[0] === "prev" && desatualizado(f) ? "<small class=\"aviso-medio num\">Médio " + formatarReais(f.valorEstimadoCentavos) + " · último " + formatarReais(desatualizado(f).valor) + "</small>" : "") + "</span>" +
       "<span class=\"fixa-v\"><span class=\"num\">" + formatarReais(l && l.status !== "prevista" ? l.valorCentavos : f.valorEstimadoCentavos) + "</span><small class=\"sit " + situacao[0] + "\">" + escapar(situacao[1]) + "</small></span>" +
       "<span class=\"seta\" aria-hidden=\"true\">›</span></button>";
   }).join("") : "<div class=\"vazio\"><strong>Nenhuma conta fixa</strong><span>Toque em \"+ Nova conta fixa\".</span></div>";
@@ -2860,7 +2860,9 @@ function abrirFixa(conta) {
   $("fxCartao").innerHTML = opcoesSelect(cartoesAtivos, conta ? conta.cartaoId : "", "Escolha");
   $("fxCategoria").innerHTML = opcoesSelect(categorias.concat(catAtual), conta ? conta.categoriaId : "despesa-moradia-e-contas");
   const ultimo = conta && conta.ativa && estado.ultimoPagoFixa ? estado.ultimoPagoFixa[conta.id] : null;
-  const sugerir = ultimo && conta.valorEstimadoCentavos > 0 && Math.abs(ultimo.valor - conta.valorEstimadoCentavos) / conta.valorEstimadoCentavos > 0.05;
+  const doMesConta = conta ? lancFixasDoMes().filter(l => l.contaFixaId === conta.id) : [];
+  const soPrevista = doMesConta.length > 0 && doMesConta.every(l => l.status === "prevista"); // aviso só enquanto a conta do mês não foi confirmada
+  const sugerir = soPrevista && ultimo && conta.valorEstimadoCentavos > 0 && Math.abs(ultimo.valor - conta.valorEstimadoCentavos) / conta.valorEstimadoCentavos > 0.05;
   $("fxSugestao").hidden = !sugerir;
   if (sugerir) {
     $("fxSugestaoTexto").textContent = "O último pagamento (" + formatarDataCurta(ultimo.data) + ") foi de " + formatarReais(ultimo.valor) + ", diferente do valor médio. Usar como novo valor médio?";

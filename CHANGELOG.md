@@ -2,6 +2,7 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 28 | 29/10/2026 | Planejar: o aviso em vermelho "Médio · último" e a sugestão de usar o último valor aparecem só nas contas fixas ainda previstas no mês; depois de confirmada (paga), o aviso some |
 | 27 | 28/10/2026 | Planejar: ao tocar numa conta fixa, a folha mostra a situação no mês escolhido (paga, com data e valor; prevista, com o valor médio; ou nenhum pagamento ligado) e o botão "Ver lançamento"; a legenda do valor médio ficou mais clara |
 | 26 | 28/10/2026 | Tocar no nome do mês (topo) abre a grade com os 12 meses do ano: escolhe o mês com um toque, muda o ano pelas setas e tem o atalho "Ir para o mês atual"; as setas continuam funcionando |
 | 25 | 28/10/2026 | O app abre sempre na tela Início (antes reabria na última tela usada) |
