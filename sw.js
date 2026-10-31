@@ -4,7 +4,7 @@
    - Bibliotecas, ícones e manifesto: usa a cópia guardada e atualiza em segundo plano.
    - Dados do Supabase NÃO passam por aqui (outro endereço): ficam no IndexedDB, cuidados pelo próprio app.
    Ao publicar uma versão nova, troque VERSAO para o aparelho baixar tudo de novo. */
-const VERSAO = "cf-v33";
+const VERSAO = "cf-v34";
 const ARQUIVOS = ["./", "./index.html", "./lib/supabase.js", "./manifest.webmanifest",
   "./icone-192.png", "./icone-512.png", "./apple-touch-icon.png"];
 

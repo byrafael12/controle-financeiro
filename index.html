@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-l5fnF1KJDVoixNyekT+SqSo7QWWrWQIXJvFkfbf5ldY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-nmOJdiUhJ1Vj4bFfUs819w075/dAD90fAOd4pADArUI='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 33, 31/10/2026: o formulário não tira mais o cursor do campo em que se está digitando; total por dia e total da categoria na tela Lançamentos na mesma visão do Início. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 34, 31/10/2026: filtro de situação (Todas, Pagas, Previstas) na tela Lançamentos. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -772,6 +772,14 @@ div.hb { cursor: default; }
           <select id="filtroCategoria" class="filtro" aria-label="Categoria"><option value="">Todas as categorias</option></select>
           <span class="total-categoria num" id="totalCategoria" hidden aria-live="polite"></span>
         </div>
+        <div class="linha">
+          <span class="mudo">Situação</span>
+          <div class="chaves" role="group" aria-label="Situação">
+            <button type="button" data-filtro-situacao="todas" aria-pressed="true">Todas</button>
+            <button type="button" data-filtro-situacao="paga" aria-pressed="false">Pagas</button>
+            <button type="button" data-filtro-situacao="prevista" aria-pressed="false">Previstas</button>
+          </div>
+        </div>
       </div>
       <div class="pendentes" id="pendentes" hidden></div>
       <div class="resumo-lista num" id="resumoLista"></div>
@@ -872,7 +880,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 33: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 34: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -1713,6 +1721,7 @@ const estado = {
   mes: competenciaDeHoje(),
   tela: "inicio",
   filtroTipo: "todos",
+  filtroSituacao: "todas", // v34: todas, paga ou prevista
   filtroCategoria: "",
   busca: "",
   formatoCategorias: "barras",
@@ -2355,10 +2364,12 @@ function desenharLista() {
   sel.value = opcoes.some(c => c.id === atual) ? atual : "";
   estado.filtroCategoria = sel.value;
   document.querySelectorAll("[data-filtro-tipo]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.filtroTipo === estado.filtroTipo)));
+  document.querySelectorAll("[data-filtro-situacao]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.filtroSituacao === estado.filtroSituacao)));
 
   const busca = estado.busca.trim().toLowerCase();
   const lista = lancamentosDaLista()
     .filter(l => estado.filtroTipo === "todos" || l.tipo === estado.filtroTipo)
+    .filter(l => estado.filtroSituacao === "todas" || (estado.filtroSituacao === "prevista" ? l.status === "prevista" : l.status !== "prevista"))
     .filter(l => !estado.filtroCategoria || l.categoriaId === estado.filtroCategoria)
     .filter(l => !busca || casaBusca(l, busca))
     .sort((a, b) => b.data.localeCompare(a.data) || (b.criadoEm || "").localeCompare(a.criadoEm || ""));
@@ -2409,9 +2420,9 @@ function desenharLista() {
   }).join("");
   const alvo = $("listaDias");
   if (lista.length === 0) {
-    const filtrado = busca || estado.filtroCategoria || estado.filtroTipo !== "todos";
+    const filtrado = busca || estado.filtroCategoria || estado.filtroTipo !== "todos" || estado.filtroSituacao !== "todas";
     alvo.innerHTML = "<div class=\"vazio\"><strong>" + (filtrado ? "Nada encontrado com esses filtros" : estado.verPor === "compra" ? "Nenhuma compra com data em " + rotuloMes(estado.mes) : "Nenhum lançamento neste mês") +
-      "</strong><span>" + (filtrado ? "Limpe a busca ou troque a categoria." : "Toque no botão + para lançar uma receita ou despesa.") + "</span></div>";
+      "</strong><span>" + (filtrado ? (estado.filtroSituacao === "prevista" ? "Nenhuma conta prevista com esses filtros neste mês." : "Limpe a busca ou troque a categoria ou a situação.") : "Toque no botão + para lançar uma receita ou despesa.") + "</span></div>";
     return;
   }
   // Agrupa por dia
@@ -3315,6 +3326,7 @@ function desenharGraficoCategorias(doMes) {
     const linha = linhas[elementos[0].index];
     if (!linha.cat.id) return;
     estado.filtroTipo = "despesa";
+    estado.filtroSituacao = "todas";
     estado.filtroCategoria = linha.cat.id;
     estado.busca = "";
     $("busca").value = "";
@@ -3990,6 +4002,7 @@ function ligarEventos() {
     const b = e.target.closest("[data-cat]");
     if (!b) return;
     estado.filtroTipo = "despesa";
+    estado.filtroSituacao = "todas";
     estado.filtroCategoria = b.dataset.cat;
     estado.busca = "";
     $("busca").value = "";
@@ -4009,6 +4022,7 @@ function ligarEventos() {
     const b = e.target.closest("[data-ircat]");
     if (!b) return;
     estado.filtroTipo = "despesa";
+    estado.filtroSituacao = "todas";
     estado.filtroCategoria = b.dataset.ircat;
     estado.busca = "";
     $("busca").value = "";
@@ -4019,7 +4033,7 @@ function ligarEventos() {
     exportarCsv({ de: ms[0], ate: ms.at(-1), cats: new Set(analise.cats), botao: $("analiseCsv") });
   });
   $("irPlanejar").addEventListener("click", () => irPara("cartoes"));
-  $("pendInicio").addEventListener("click", () => { estado.filtroTipo = "todos"; estado.filtroCategoria = ""; estado.busca = ""; $("busca").value = ""; irPara("lancamentos"); });
+  $("pendInicio").addEventListener("click", () => { estado.filtroTipo = "todos"; estado.filtroSituacao = "todas"; estado.filtroCategoria = ""; estado.busca = ""; $("busca").value = ""; irPara("lancamentos"); });
   $("formNovaFixa").addEventListener("submit", async e => {
     e.preventDefault();
     const descricao = $("nfDescricao").value.trim();
@@ -4129,6 +4143,10 @@ function ligarEventos() {
   $("filtroCategoria").addEventListener("change", e => { estado.filtroCategoria = e.target.value; desenharLista(); });
   document.querySelectorAll("[data-filtro-tipo]").forEach(b => b.addEventListener("click", () => {
     estado.filtroTipo = b.dataset.filtroTipo;
+    desenharLista();
+  }));
+  document.querySelectorAll("[data-filtro-situacao]").forEach(b => b.addEventListener("click", () => {
+    estado.filtroSituacao = b.dataset.filtroSituacao;
     desenharLista();
   }));
 
