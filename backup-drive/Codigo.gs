@@ -1,15 +1,16 @@
 /**
- * Controle Financeiro: backup SEMANAL automático no Google Drive (Entrega 5.7, semanal desde 26/10/2026).
+ * Controle Financeiro: backup automático no Google Drive, 2 vezes por semana (Entrega 5.7; semanal desde 26/10/2026,
+ * segunda e quinta desde 31/10/2026, para o Supabase nunca ficar 1 semana sem acesso).
  * Roda no Google Apps Script da conta de Rafael, na nuvem do Google. Não depende do notebook.
  *
- * O que faz, toda segunda-feira (entre 8h e 9h, horário de Brasília):
+ * O que faz, toda segunda-feira e toda quinta-feira (entre 8h e 9h, horário de Brasília):
  *   1. Entra no Supabase com o e-mail e a senha guardados nas Propriedades do script.
  *   2. Lê todas as tabelas do app (a RLS só devolve os dados do próprio usuário).
  *   3. Monta o JSON no mesmo formato do botão "Baixar backup" do app (dá para restaurar no app).
  *   4. Grava o arquivo na pasta do Drive informada e confere o tamanho gravado.
  *   5. Marca no app a data do último backup.
  *   6. O primeiro backup de cada mês é o "mensal": só nele vai o e-mail de OK. Se falhar, o e-mail vai sempre.
- *   7. Organiza a pasta: guarda os mensais dos últimos 24 meses e os 8 backups semanais mais recentes;
+ *   7. Organiza a pasta: guarda os mensais dos últimos 24 meses e os 16 backups mais recentes (cerca de 8 semanas);
  *      os mais antigos vão para a lixeira do Drive (recuperáveis por 30 dias).
  *
  * Configuração (uma vez): Configurações do projeto > Propriedades do script:
@@ -51,9 +52,9 @@ const TABELAS = [
 
 const PADRAO_ARQUIVO = /^backup-controle-financeiro-(\d{4}-\d{2})-(\d{2})\.json$/;
 const MENSAIS_GUARDADOS = 24;
-const SEMANAIS_GUARDADOS = 8;
+const SEMANAIS_GUARDADOS = 16; // 2 por semana = cerca de 8 semanas
 
-/** Agendado: roda toda segunda-feira. */
+/** Agendado: roda toda segunda-feira e toda quinta-feira. */
 function backupSemanal() {
   const props = PropertiesService.getScriptProperties();
   const email = props.getProperty("EMAIL");
@@ -65,7 +66,7 @@ function backupSemanal() {
     const limpeza = organizarPasta(pasta);
     if (ehMensal) {
       MailApp.sendEmail(email, "Backup mensal do Controle Financeiro: OK (" + resumo.arquivo + ")",
-        "Backup mensal salvo no Google Drive. Os backups semanais continuam toda segunda-feira, sem e-mail.\n\n" +
+        "Backup mensal salvo no Google Drive. Os outros backups continuam toda segunda e quinta-feira, sem e-mail.\n\n" +
         "Arquivo: " + resumo.arquivo + "\nTamanho: " + resumo.tamanho + " bytes\n" +
         "Lançamentos: " + resumo.lancamentos + "\nCategorias: " + resumo.categorias + " · Cartões: " + resumo.cartoes +
         " · Contas fixas: " + resumo.fixas + "\nArquivos antigos enviados para a lixeira: " + limpeza +
@@ -73,7 +74,7 @@ function backupSemanal() {
     }
   } catch (erro) {
     MailApp.sendEmail(email, "Backup do Controle Financeiro: FALHOU",
-      "O backup automático desta semana não foi feito.\n\nMotivo: " + erro.message +
+      "O backup automático de hoje não foi feito.\n\nMotivo: " + erro.message +
       "\n\nFaça pelo app: Ajustes > Baixar backup completo (JSON), e me mostre esta mensagem.");
     throw erro;
   }
@@ -94,7 +95,7 @@ function listarBackups(pasta) {
   return lista.sort(function (a, b) { return b.data.localeCompare(a.data) || b.criado - a.criado; });
 }
 
-// Mensal = o primeiro backup de cada mês. Fica: mensais dos últimos 24 meses + os 8 backups mais recentes.
+// Mensal = o primeiro backup de cada mês. Fica: mensais dos últimos 24 meses + os 16 backups mais recentes.
 function organizarPasta(pasta) {
   const lista = listarBackups(pasta);
   const primeiroDoMes = {};
@@ -253,11 +254,12 @@ function marcarUltimoBackup(sessao, quando) {
   if (r.getResponseCode() >= 300) Logger.log("Aviso: não consegui marcar a data do backup no app (código " + r.getResponseCode() + ").");
 }
 
-/** Rode uma vez: cria o agendamento (toda segunda-feira, entre 8h e 9h de Brasília) e apaga o antigo (dia 1). Rodar de novo não duplica. */
+/** Rode uma vez: cria os agendamentos (toda segunda e quinta-feira, entre 8h e 9h de Brasília) e apaga os anteriores. Rodar de novo não duplica. */
 function instalarAgendamento() {
   for (const g of ScriptApp.getProjectTriggers()) {
     if (["backupMensal", "backupSemanal"].indexOf(g.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(g);
   }
   ScriptApp.newTrigger("backupSemanal").timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(8).inTimezone(FUSO).create();
-  Logger.log("Agendamento criado: toda segunda-feira, entre 8h e 9h (horário de Brasília).");
+  ScriptApp.newTrigger("backupSemanal").timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(8).inTimezone(FUSO).create();
+  Logger.log("Agendamentos criados: toda segunda-feira e toda quinta-feira, entre 8h e 9h (horário de Brasília).");
 }
