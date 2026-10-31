@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-7TI1VN0BzavjGPU3Okd0yf4sWSp6tblPaq5V0maUl0M='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-l5fnF1KJDVoixNyekT+SqSo7QWWrWQIXJvFkfbf5ldY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 32, 30/10/2026: volta ao Início ao retomar o app; a tela Lançamentos usa a mesma visão do Início; supabase-js 2.118.0. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 33, 31/10/2026: o formulário não tira mais o cursor do campo em que se está digitando; total por dia e total da categoria na tela Lançamentos na mesma visão do Início. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -872,7 +872,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 32: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 33: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -2377,10 +2377,11 @@ function desenharLista() {
   const caixaTotal = $("totalCategoria");
   caixaTotal.hidden = !estado.filtroCategoria;
   if (estado.filtroCategoria) {
-    const soma = lista.reduce((a, l) => a + l.valorCentavos, 0);
     const ehReceita = categoriaPorId(estado.filtroCategoria).tipo === "receita";
+    const soma = ehReceita ? t.receitas : t.despesas; // mesma visão do Início (v33)
+    const somaBruta = ehReceita ? bruto.receitas : bruto.despesas;
     caixaTotal.innerHTML = "Total: <b class=\"" + (ehReceita ? "receita" : "despesa") + "\">" + formatarReais(soma) + "</b> <span class=\"mudo\">(" +
-      lista.length + (lista.length === 1 ? " lançamento" : " lançamentos") + ")</span>";
+      lista.length + (lista.length === 1 ? " lançamento" : " lançamentos") + (somaBruta !== soma ? "; " + formatarReais(somaBruta - soma) + " fora do total pela visão" : "") + ")</span>";
   }
   $("resumoLista").innerHTML = lista.length
     ? "<span>" + (estado.verPor === "compra" ? "Compras feitas em " + rotuloMes(estado.mes) + ": " : "") + lista.length + " lançamentos</span><span>Receitas <b class=\"receita\">" + formatarReais(t.receitas) + "</b></span><span>Despesas <b class=\"despesa\">" + formatarReais(t.despesas) + "</b></span><span class=\"nota-visao mudo\">" + escapar(notaVisao) + "</span>"
@@ -2421,7 +2422,7 @@ function desenharLista() {
   }
   let html = "";
   for (const [data, itens] of dias) {
-    const td = totais(itens);
+    const td = totais(itens, opcVisao); // mesma visão do Início (v33)
     html += "<div class=\"dia\"><div class=\"dia-topo\"><strong>" + escapar(nomeDia.format(new Date(data + "T00:00:00Z"))) +
       "</strong><span class=\"num\">" + (td.saldo < 0 ? "-" : "") + formatarReais(Math.abs(td.saldo)) + "</span></div><div class=\"itens\">";
     for (const l of itens) {
@@ -2658,7 +2659,11 @@ async function abrirForm(lanc) {
   sincronizarChipsData(false);
   $("fundoForm").hidden = false;
   $("fundoForm").querySelector(".folha").scrollTop = 0;
-  setTimeout(() => $("fValor").focus(), 50);
+  setTimeout(() => {
+    // Só põe o cursor no Valor se o formulário seguir aberto e a pessoa ainda não estiver num campo dele (v33)
+    if ($("fundoForm").hidden || $("fundoForm").contains(document.activeElement)) return;
+    $("fValor").focus();
+  }, 50);
 }
 
 function fecharForm() {

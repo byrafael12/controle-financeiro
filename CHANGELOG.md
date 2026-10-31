@@ -2,6 +2,7 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 33 | 31/10/2026 | Corrigida a falha em que o valor digitado "sumia": o cursor automático do Valor, quando chegava atrasado (aparelho ocupado, por exemplo logo depois de abrir sem internet), puxava o que se digitava em outro campo para o Valor e o lançamento era recusado; agora ele só vai para o Valor se ninguém estiver num campo do formulário. Na tela Lançamentos, o total de cada dia e o total da categoria do filtro seguem a mesma visão do Início (pessoal ou bruta, com ou sem Paytrack KMs), e o total da categoria diz quanto ficou fora pela visão |
 | 32 | 30/10/2026 | Ao voltar para o app (estava em segundo plano), ele vai para o Início; só não sai do formulário de lançamento se já houver algo digitado. A tela Lançamentos mostra receitas e despesas na mesma visão do Início (pessoal ou bruta, com ou sem Paytrack KMs) e diz o que ficou fora do total. Biblioteca supabase-js atualizada para 2.118.0 |
 | 31 | 29/10/2026 | Nova forma de pagamento "MP Empréstimo" (compras parceladas no Mercado Crédito, pagas com o saldo do Mercado Pago); não pede cartão e o mês é o da data |
 | 30 | 29/10/2026 | Planejar: a conta fixa aparece só nos meses em que tem lançamento (pago ou previsto), com a situação real mesmo que hoje esteja desativada; nunca mais "sem lançamento"; desativada aparece só depois do último lançamento; conta nova começa no mês em que foi criada; ao reativar, as previstas voltam |
