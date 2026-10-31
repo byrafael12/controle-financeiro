@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-34MlMTyUcidfPODtcTfIYDngER7c9nXnlU+jKnCL5Pc='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-7TI1VN0BzavjGPU3Okd0yf4sWSp6tblPaq5V0maUl0M='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 31, 29/10/2026: nova forma de pagamento MP Empréstimo (Mercado Crédito). Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 32, 30/10/2026: volta ao Início ao retomar o app; a tela Lançamentos usa a mesma visão do Início; supabase-js 2.118.0. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -442,6 +442,7 @@ main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom
 .fixa-v .sit { font-size: 11.5px; font-weight: 600; }
 .sit.paga { color: var(--receita); }
 .sit.prev, .sit.sem, .sit.inativa { color: var(--muted); }
+.resumo-lista .nota-visao { flex-basis: 100%; font-size: 12px; }
 .situacao-fixa { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; color: var(--fg); }
 .situacao-fixa.paga { border-color: var(--receita); }
 .situacao-fixa b { font-weight: 700; }
@@ -871,7 +872,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 31: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 32: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -2362,7 +2363,16 @@ function desenharLista() {
     .filter(l => !busca || casaBusca(l, busca))
     .sort((a, b) => b.data.localeCompare(a.data) || (b.criadoEm || "").localeCompare(a.criadoEm || ""));
 
-  const t = totais(lista);
+  const opcVisao = { incluirKms: estado.incluirKms, pessoal: estado.pessoal };
+  const t = totais(lista, opcVisao); // mesma visão do Início (v32)
+  const bruto = totais(lista);
+  const kmsFora = estado.incluirKms ? 0 : lista.filter(l => l.tipo === "receita" && l.categoriaId === ID_PAYTRACK_KMS).reduce((a, l) => a + l.valorCentavos, 0);
+  const reembRec = bruto.receitas - t.receitas - kmsFora, reembDesp = bruto.despesas - t.despesas;
+  const partes = [];
+  if (reembRec > 0) partes.push("reembolsos recebidos " + formatarReais(reembRec));
+  if (reembDesp > 0) partes.push("parte reembolsável das despesas " + formatarReais(reembDesp));
+  if (kmsFora > 0) partes.push("Paytrack KMs " + formatarReais(kmsFora));
+  const notaVisao = (estado.pessoal ? "Visão pessoal, como no Início" : "Visão bruta, como no Início") + (partes.length ? ". Fora do total: " + partes.join(" · ") : "") + ".";
   // Total da categoria escolhida no filtro (respeita tipo, busca e "Ver por")
   const caixaTotal = $("totalCategoria");
   caixaTotal.hidden = !estado.filtroCategoria;
@@ -2373,7 +2383,7 @@ function desenharLista() {
       lista.length + (lista.length === 1 ? " lançamento" : " lançamentos") + ")</span>";
   }
   $("resumoLista").innerHTML = lista.length
-    ? "<span>" + (estado.verPor === "compra" ? "Compras feitas em " + rotuloMes(estado.mes) + ": " : "") + lista.length + " lançamentos</span><span>Receitas <b class=\"receita\">" + formatarReais(t.receitas) + "</b></span><span>Despesas <b class=\"despesa\">" + formatarReais(t.despesas) + "</b></span>"
+    ? "<span>" + (estado.verPor === "compra" ? "Compras feitas em " + rotuloMes(estado.mes) + ": " : "") + lista.length + " lançamentos</span><span>Receitas <b class=\"receita\">" + formatarReais(t.receitas) + "</b></span><span>Despesas <b class=\"despesa\">" + formatarReais(t.despesas) + "</b></span><span class=\"nota-visao mudo\">" + escapar(notaVisao) + "</span>"
     : "";
 
   // Contas previstas ainda não confirmadas no mês
@@ -4161,6 +4171,18 @@ function ligarEventos() {
     const ok = await gravarComSeguranca(() => colecaoCategorias().doc(id).set({ nome, tipo, cor: PALETA[ordem % PALETA.length], ativa: true, ordem }), "Não consegui criar a categoria.");
     if (ok) campo.value = "";
   }));
+
+  // Ao voltar para o app (estava em segundo plano), vai sempre para o Início (v32)
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || $("app").hidden) return;
+    const formAberto = !$("fundoForm").hidden;
+    if (formAberto && ($("fValor").value.trim() || $("fDescricao").value.trim())) return; // não perde o que foi digitado
+    if (formAberto) fecharForm();
+    if (!$("fundoFixa").hidden) fecharFixa();
+    if (!$("fundoMeses").hidden) $("fundoMeses").hidden = true;
+    if (!$("fundoConfirma").hidden) $("fundoConfirma").hidden = true;
+    if (estado.tela !== "inicio") irPara("inicio"); else window.scrollTo(0, 0);
+  });
 
   // Redesenha os gráficos quando o aparelho troca entre claro e escuro
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (estado.tela === "analise") desenharAnalise(); });
