@@ -18,9 +18,17 @@ App pessoal de controle financeiro de Rafael de Freitas: receitas, despesas, car
 - Nenhum dado financeiro: os lançamentos ficam no Supabase, protegidos por login e RLS, e os backups (JSON) ficam fora do GitHub.
 - Nenhuma senha, token ou chave secreta (só a chave publishable, que é pública por definição).
 
+## Demonstração (versão 39, 02/11/2026)
+
+- `demo.html`: cópia do app com dados fictícios, para mostrar as funções sem expor dados reais. Link: https://byrafael12.github.io/controle-financeiro/demo.html
+- Não se conecta a nenhum banco: o arquivo não tem endereço nem chave do Supabase, e a CSP bloqueia qualquer conexão (`connect-src 'none'`).
+- Na primeira abertura gera 12 meses de dados inventados (até o mês atual), guardados só no aparelho de quem testa (localStorage, prefixo `cf-demo:`). Cada pessoa tem a sua cópia; "Restaurar demonstração", em Ajustes, volta aos dados originais.
+- Sem login, sem duas etapas, sem cópias automáticas e sem meses fechados. Backup e CSV geram arquivo só no aparelho.
+- Montada por `montar-demo.py` a partir do `index.html` (fica fora deste repositório, como o `montar.py`).
+
 ## Sem internet (Entrega 6, 26/10/2026)
 
-- `sw.js` (service worker) guarda os arquivos do app no aparelho; `manifest.webmanifest` e os ícones permitem o atalho na tela de início.
+- `sw.js` (service worker) guarda os arquivos do app no aparelho (desde a versão 39, cada página com o próprio nome: a demonstração não toma o lugar do app sem internet); `manifest.webmanifest` e os ícones permitem o atalho na tela de início.
 - Os dados lidos ficam numa cópia no aparelho (IndexedDB); sem internet, o app mostra essa cópia e avisa a data.
 - Sem internet só é possível **criar** lançamentos: eles ficam numa fila "aguardando envio" e sobem sozinhos quando a conexão volta (mesmo código, sem duplicar). Editar, excluir, backup, exportação e restauração exigem conexão.
 - Sair apaga a cópia e a fila do aparelho (e não deixa sair com lançamentos aguardando envio).

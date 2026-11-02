@@ -2,6 +2,7 @@
 
 | Versão | Data | O que mudou |
 | --- | --- | --- |
+| 39 | 02/11/2026 | Versão de demonstração (`demo.html`): o app com dados fictícios de 12 meses, sem login e sem conexão com o banco (a CSP bloqueia qualquer conexão), com os dados guardados só no aparelho de quem testa e o botão "Restaurar demonstração" em Ajustes. Corrigido no `sw.js`: sem internet, a última página aberta era guardada como se fosse o app; agora cada página fica com o próprio nome, e a demonstração não toma o lugar do app real |
 | 38 | 02/11/2026 | Meses fechados: até set/2026 e, depois, cada mês (pelo mês da fatura) a partir do dia 10 do mês seguinte, os lançamentos ficam só para consulta no app: não editam, não excluem, não confirmam prevista, não aceitam lançamento novo nem mudança de data para o mês fechado; compra parcelada com parcela em mês fechado fica só para consulta; conta fixa não gera prevista em mês fechado. A tela Lançamentos avisa se o mês está fechado ou quando ele fecha. Correções de mês fechado são feitas pelo Claude |
 | 37 | 02/11/2026 | Corrigido: o app lia no máximo 1000 lançamentos por consulta; a janela de 12 meses passou de 1000 (dez/25 a nov/26) e os totais de novembro em diante ficavam incompletos (Início, Lançamentos, faturas nos Próximos 15 dias). Agora lê tudo, em páginas de 1000 |
 | 36 | 01/11/2026 | Receita prevista de Paytrack KMs que cai no sábado ou domingo vai para a segunda-feira; as outras receitas previstas continuam indo para a sexta |

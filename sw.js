@@ -4,7 +4,7 @@
    - Bibliotecas, ícones e manifesto: usa a cópia guardada e atualiza em segundo plano.
    - Dados do Supabase NÃO passam por aqui (outro endereço): ficam no IndexedDB, cuidados pelo próprio app.
    Ao publicar uma versão nova, troque VERSAO para o aparelho baixar tudo de novo. */
-const VERSAO = "cf-v38";
+const VERSAO = "cf-v39";
 const ARQUIVOS = ["./", "./index.html", "./lib/supabase.js", "./manifest.webmanifest",
   "./icone-192.png", "./icone-512.png", "./apple-touch-icon.png"];
 
@@ -26,16 +26,19 @@ self.addEventListener("fetch", evento => {
   const url = new URL(pedido.url);
   if (url.origin !== self.location.origin) return; // Supabase e outros: direto pela rede
 
-  const ehPagina = pedido.mode === "navigate" || url.pathname.endsWith("/") || url.pathname.endsWith("/index.html");
+  const ehPagina = pedido.mode === "navigate" || url.pathname.endsWith("/") || url.pathname.endsWith(".html");
   if (ehPagina) {
-    // Rede primeiro; sem rede, a última página guardada
+    // Rede primeiro; sem rede, a última cópia DESTA página (v39: o app e a demonstração ficam separados;
+    // antes, qualquer página aberta era guardada como index.html)
+    const ehApp = url.pathname.endsWith("/") || url.pathname.endsWith("/index.html");
+    const chave = ehApp ? "./index.html" : "." + url.pathname.slice(url.pathname.lastIndexOf("/"));
     evento.respondWith(
       fetch(pedido)
         .then(resposta => {
-          if (resposta.ok) { const copia = resposta.clone(); caches.open(VERSAO).then(c => c.put("./index.html", copia)); }
+          if (resposta.ok) { const copia = resposta.clone(); caches.open(VERSAO).then(c => c.put(chave, copia)); }
           return resposta;
         })
-        .catch(() => caches.match("./index.html").then(r => r || caches.match("./")))
+        .catch(() => caches.match(chave).then(r => r || (ehApp ? caches.match("./") : Response.error())))
     );
     return;
   }
