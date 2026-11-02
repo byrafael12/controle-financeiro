@@ -10,7 +10,7 @@ App pessoal de controle financeiro de Rafael de Freitas: receitas, despesas, car
 - Cada tabela tem Row Level Security (RLS) forçada: cada pessoa logada só lê e grava as próprias linhas; sem login não há acesso.
 - A chave do Supabase no código é a publishable, feita para ficar em código público. A secret key e a senha do banco nunca entram no repositório.
 - Gráficos desenhados pelo próprio app em SVG (desde a versão 22). O Chart.js foi removido do repositório em 28/10/2026.
-- Backup mensal automático no Google Drive por Google Apps Script (`backup-drive/Codigo.gs`); e-mail, senha e chave do autenticador ficam só nas Propriedades do script.
+- Backup automático no Google Drive toda segunda e quinta-feira por Google Apps Script (`backup-drive/Codigo.gs`; o primeiro do mês avisa por e-mail); e-mail, senha e chave do autenticador ficam só nas Propriedades do script.
 - Scripts do banco na pasta `supabase/` (rodados no SQL Editor do Supabase, em ordem).
 
 ## O que NÃO está neste repositório

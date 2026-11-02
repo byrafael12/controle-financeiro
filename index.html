@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-nmOJdiUhJ1Vj4bFfUs819w075/dAD90fAOd4pADArUI='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-C75o5KQvm8S370cnX+aN8/EJbybbAEU7ik1ALuppXHQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 34, 31/10/2026: filtro de situação (Todas, Pagas, Previstas) na tela Lançamentos. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 36, 01/11/2026: receitas previstas (contas fixas de receita); Paytrack KMs no fim de semana vai para a segunda e as outras receitas para a sexta; ao retomar o app, ele continua na tela em que estava. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -256,6 +256,11 @@ select.filtro { width: auto; min-width: 170px; }
 .tipo-alterna button { border: 0; background: transparent; min-height: 44px; border-radius: 9px; font-weight: 600; color: var(--muted); }
 .tipo-alterna button[aria-pressed="true"][data-tipo="despesa"] { background: var(--surface); color: var(--despesa); box-shadow: 0 1px 2px rgb(0 0 0 / .1); }
 .tipo-alterna button[aria-pressed="true"][data-tipo="receita"] { background: var(--surface); color: var(--receita); box-shadow: 0 1px 2px rgb(0 0 0 / .1); }
+.alterna-fixa { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); border-radius: 12px; padding: 4px; gap: 4px; }
+.alterna-fixa button { border: 0; background: transparent; min-height: 44px; border-radius: 9px; font-weight: 600; color: var(--muted); }
+.alterna-fixa button:disabled { cursor: default; }
+.alterna-fixa button[aria-pressed="true"][data-fxtipo="despesa"] { background: var(--surface); color: var(--despesa); box-shadow: 0 1px 2px rgb(0 0 0 / .1); }
+.alterna-fixa button[aria-pressed="true"][data-fxtipo="receita"] { background: var(--surface); color: var(--receita); box-shadow: 0 1px 2px rgb(0 0 0 / .1); }
 .campo { display: grid; gap: 6px; }
 .campo label { font-size: 13px; font-weight: 600; color: var(--muted); }
 .campo-valor { display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--line); padding: 4px 2px; }
@@ -880,7 +885,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 34: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 36: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -910,12 +915,17 @@ div.hb { cursor: default; }
     <div class="folha-topo"><h2 id="tituloFixa">Editar conta fixa</h2><button type="button" class="botao texto" id="fecharFixa">Fechar</button></div>
     <form id="formFixa" class="form-fixa" novalidate>
       <div class="situacao-fixa largo" id="fxSituacao" hidden><span id="fxSituacaoTexto"></span><button type="button" class="botao" id="fxVerLanc" hidden>Ver lançamento</button></div>
+      <div class="alterna-fixa largo" role="group" aria-label="Tipo da conta fixa" id="fxTipo">
+        <button type="button" data-fxtipo="despesa" aria-pressed="true">Despesa</button>
+        <button type="button" data-fxtipo="receita" aria-pressed="false">Receita</button>
+      </div>
       <label class="largo">Conta<input type="text" id="fxDescricao" maxlength="40" autocomplete="off"></label>
       <label>Dia<input type="number" id="fxDia" inputmode="numeric" min="1" max="31"></label>
       <label>Valor médio<input type="text" id="fxValor" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
       <label>Pagamento<select id="fxForma"></select></label>
       <label id="fxCartaoCampo">Cartão<select id="fxCartao"></select></label>
       <label class="largo">Categoria<select id="fxCategoria"></select></label>
+      <label class="largo" id="fxReembCampo" hidden>Reembolso<select id="fxReembDe"><option value="">Não é reembolso</option><option value="vigor">Reembolso da Vigor</option><option value="paola">Aporte ou reembolso da Paola</option></select></label>
       <div class="sugestao-medio largo" id="fxSugestao" hidden><span id="fxSugestaoTexto"></span><button type="button" class="botao" id="fxUsarUltimo">Usar</button></div>
       <p class="dica largo">Valor médio e dia de referência para os próximos meses. Salvar aqui não muda lançamentos já feitos.</p>
       <button type="submit" class="botao primario largo" id="fxSalvar">Salvar</button>
@@ -1042,7 +1052,8 @@ const MAPA_TABELAS = {
     tabela: "contas_fixas", chave: "id",
     campos: {
       descricao: "descricao", categoriaId: "categoria_id", formaPagamento: "forma_pagamento", cartaoId: "cartao_id",
-      diaVencimento: "dia_vencimento", valorEstimadoCentavos: "valor_estimado_centavos", ativa: "ativa"
+      diaVencimento: "dia_vencimento", valorEstimadoCentavos: "valor_estimado_centavos", ativa: "ativa",
+      tipo: "tipo", reembolsoDe: "reembolso_de"
     }
   },
   orcamentos: { tabela: "orcamentos", chave: "categoria_id", campos: { valorPlanejadoCentavos: "valor_planejado_centavos" } },
@@ -1653,6 +1664,7 @@ function totais(lancamentos, opcoes = {}) {
   const incluirKms = opcoes.incluirKms !== false;
   const pessoal = opcoes.pessoal === true;
   let receitas = 0;
+  let receitasPrevistas = 0;
   let despesasPagas = 0;
   let despesasPrevistas = 0;
   for (const l of lancamentos) {
@@ -1660,6 +1672,7 @@ function totais(lancamentos, opcoes = {}) {
       if (!incluirKms && l.categoriaId === ID_PAYTRACK_KMS) continue;
       if (pessoal && l.reembolsoDe) continue;
       receitas += l.valorCentavos;
+      if (l.status === "prevista") receitasPrevistas += l.valorCentavos;
     } else if (l.status === "prevista") {
       despesasPrevistas += valorDespesa(l, pessoal);
     } else {
@@ -1667,7 +1680,7 @@ function totais(lancamentos, opcoes = {}) {
     }
   }
   const despesas = despesasPagas + despesasPrevistas;
-  return { receitas, despesas, despesasPagas, despesasPrevistas, saldo: receitas - despesas };
+  return { receitas, receitasPrevistas, despesas, despesasPagas, despesasPrevistas, saldo: receitas - despesas };
 }
 
 // Saldo a receber por fonte: despesas reembolsáveis (já pagas) menos reembolsos recebidos
@@ -1679,7 +1692,7 @@ function calcularAReceber(despesasReembolsaveis, reembolsosRecebidos, desde = "2
     saldo[l.reembolso.quem] += l.reembolso.valorCentavos || 0;
   }
   for (const l of reembolsosRecebidos) {
-    if (l.data < desde) continue;
+    if (l.data < desde || l.status === "prevista") continue;
     if (l.reembolsoDe in saldo) saldo[l.reembolsoDe] -= l.valorCentavos;
   }
   return saldo;
@@ -1687,14 +1700,30 @@ function calcularAReceber(despesasReembolsaveis, reembolsosRecebidos, desde = "2
 
 // Lançamento previsto de uma conta fixa num mês (a data é só referência)
 function montarPrevista(conta, mes, cartao, agora) {
+  const receita = conta.tipo === "receita";
   const dia = Math.min(conta.diaVencimento, diasNoMes(mes));
-  const data = mes + "-" + String(dia).padStart(2, "0");
+  let data = mes + "-" + String(dia).padStart(2, "0");
+  if (receita) data = conta.categoriaId === ID_PAYTRACK_KMS ? adiaFimDeSemana(data) : antecipaFimDeSemana(data); // v36: Paytrack KMs vai para a segunda; as outras receitas, para a sexta
   return {
-    tipo: "despesa", descricao: conta.descricao, valorCentavos: conta.valorEstimadoCentavos, data,
-    competencia: calcularCompetencia(data, cartao), categoriaId: conta.categoriaId, formaPagamento: conta.formaPagamento,
-    cartaoId: cartao ? cartao.id : null, status: "prevista", parcela: null, grupoParcela: null, contaFixaId: conta.id,
-    reembolso: null, reembolsoQuem: null, reembolsoDe: null, observacao: "", versaoEsquema: VERSAO_ESQUEMA, criadoEm: agora, atualizadoEm: agora
+    tipo: receita ? "receita" : "despesa", descricao: conta.descricao, valorCentavos: conta.valorEstimadoCentavos, data,
+    competencia: receita ? data.slice(0, 7) : calcularCompetencia(data, cartao), categoriaId: conta.categoriaId, formaPagamento: conta.formaPagamento,
+    cartaoId: !receita && cartao ? cartao.id : null, status: "prevista", parcela: null, grupoParcela: null, contaFixaId: conta.id,
+    reembolso: null, reembolsoQuem: null, reembolsoDe: receita ? (conta.reembolsoDe || null) : null, observacao: "", versaoEsquema: VERSAO_ESQUEMA, criadoEm: agora, atualizadoEm: agora
   };
+}
+
+// Sábado avança 2 dias e domingo avança 1 dia (para a segunda-feira); dias úteis ficam como estão
+function adiaFimDeSemana(data) {
+  const d = new Date(data + "T12:00:00Z");
+  const avanca = d.getUTCDay() === 6 ? 2 : d.getUTCDay() === 0 ? 1 : 0;
+  return new Date(d.getTime() + avanca * 864e5).toISOString().slice(0, 10);
+}
+
+// Sábado volta 1 dia e domingo volta 2 dias (para a sexta-feira); dias úteis ficam como estão
+function antecipaFimDeSemana(data) {
+  const d = new Date(data + "T12:00:00Z");
+  const volta = d.getUTCDay() === 6 ? 1 : d.getUTCDay() === 0 ? 2 : 0;
+  return new Date(d.getTime() - volta * 864e5).toISOString().slice(0, 10);
 }
 
 // Transforma um nome em id simples: "Moradia e contas" -> "despesa-moradia-e-contas"
@@ -1870,7 +1899,7 @@ async function gerarFixasDoMes(mes) {
   const agora = new Date().toISOString();
   for (const conta of estado.contasFixas.filter(c => c.ativa)) {
     if (feitas.includes(conta.id)) continue;
-    if (mes < competenciaDeHoje() && !estado.inicioFixa[conta.id]) continue; // conta nova: começa no mês em que foi criada
+    if (mes < competenciaDeHoje() && (!estado.inicioFixa[conta.id] || mes < estado.inicioFixa[conta.id])) continue; // conta nova: começa no mês em que foi criada (v35: compara o mês)
     const id = "fixa-" + conta.id + "-" + mes;
     const existente = await colecaoLancamentos().doc(id).get();
     if (!existente.exists) {
@@ -2065,6 +2094,7 @@ function desenharInicio() {
   const diasRest = diasMes - diaHoje + 1;
   const sub = atual
     ? (t.saldo > 0 ? "Até " + diasMes + "/" + estado.mes.slice(5) + ", cerca de " + formatarReais(Math.round(t.saldo / diasRest)) + " por dia" : "As despesas passaram as receitas em " + formatarReais(Math.abs(t.saldo)))
+      + (t.receitasPrevistas > 0 ? ". Conta com " + formatarReais(t.receitasPrevistas) + " de receitas ainda previstas" : "")
     : "Receitas " + formatarReais(t.receitas) + " menos despesas " + formatarReais(t.despesas);
   // Compras no crédito feitas neste mês que já estão na fatura do mês seguinte (só informativo: entram nas despesas de lá)
   const seguinte = somarMeses(estado.mes, 1);
@@ -2091,7 +2121,7 @@ function desenharInicio() {
   $("kDespesas").textContent = formatarReais(t.despesas);
   $("kSaldo").textContent = (t.saldo < 0 ? "-" : "") + formatarReais(Math.abs(t.saldo));
   $("kSaldo").className = "v num " + (t.saldo < 0 ? "despesa" : "");
-  $("kReceitasDet").textContent = variacao(t.receitas, tAnt.receitas);
+  $("kReceitasDet").textContent = variacao(t.receitas, tAnt.receitas) + (t.receitasPrevistas > 0 ? " · inclui " + formatarReais(t.receitasPrevistas) + " previstas" : "");
   $("kDespesasDet").textContent = variacao(t.despesas, tAnt.despesas) + (t.despesasPrevistas > 0 ? " · inclui " + formatarReais(t.despesasPrevistas) + " previstas" : "");
   $("kGuardado").textContent = t.receitas > 0 ? (Math.round((t.saldo / t.receitas) * 1000) / 10).toLocaleString("pt-BR") + "% da receita" : "sem receitas no mês";
   const receber = calcularAReceber(estado.reembDespesas, estado.reembReceitas, (estado.config && estado.config.reembolsosDesde) || "2026-10-01");
@@ -2142,10 +2172,10 @@ function desenharInicio() {
       "<span class=\"venc-t\"><span class=\"venc-n\">" + escapar(i.nome) + "</span><small>" + escapar(i.meta) + "</small></span><span class=\"num venc-v\">" + formatarReais(i.valor) + "</span></div>"
     ).join("") : "<p class=\"dica\">Nada vence até " + formatarDataCurta(ate) + ".</p>";
     // Pendências: contas previstas que já venceram e não foram confirmadas
-    const aConfirmar = todos.filter(l => l.tipo === "despesa" && l.status === "prevista" && l.data <= hoje).length;
+    const aConfirmar = todos.filter(l => l.status === "prevista" && l.data <= hoje).length;
     $("pendInicio").hidden = aConfirmar === 0;
     $("pendInicio").innerHTML = "<span class=\"qtd num\">" + aConfirmar + "</span><span><b>Pendências</b>: " + aConfirmar +
-      (aConfirmar === 1 ? " conta fixa vencida ainda não confirmada" : " contas fixas vencidas ainda não confirmadas") + "</span><span aria-hidden=\"true\">›</span>";
+      (aConfirmar === 1 ? " prevista com data vencida ainda não confirmada" : " previstas com data vencida ainda não confirmadas") + "</span><span aria-hidden=\"true\">›</span>";
   } else {
     $("pendInicio").hidden = true;
   }
@@ -2655,9 +2685,11 @@ async function abrirForm(lanc) {
   const prevista = Boolean(lanc && lanc.status === "prevista");
   $("avisoPrevista").hidden = !prevista;
   if (prevista) {
-    $("tituloForm").textContent = "Confirmar pagamento";
-    $("avisoPrevista").textContent = "Valor médio e dia de referência. Ajuste para o valor e a data reais do pagamento e toque em Confirmar pagamento.";
-    $("salvarLanc").textContent = "Confirmar pagamento";
+    const rec = lanc.tipo === "receita";
+    $("tituloForm").textContent = rec ? "Confirmar recebimento" : "Confirmar pagamento";
+    $("avisoPrevista").textContent = rec ? "Valor e dia previstos. Ajuste para o valor e a data reais do crédito e toque em Confirmar recebimento."
+      : "Valor médio e dia de referência. Ajuste para o valor e a data reais do pagamento e toque em Confirmar pagamento.";
+    $("salvarLanc").textContent = rec ? "Confirmar recebimento" : "Confirmar pagamento";
   }
   $("avisoParcela").hidden = !(lanc && lanc.parcela);
   if (ehParcelaImportada(lanc)) {
@@ -2893,13 +2925,14 @@ function desenharFixas() {
   const contas = estado.contasFixas.filter(aparece).sort((x, y) => (y.ativa - x.ativa) || (x.diaVencimento - y.diaVencimento) || x.descricao.localeCompare(y.descricao));
   $("listaFixas").innerHTML = contas.length ? contas.map(f => {
     const l = doMesData.find(x => x.contaFixaId === f.id);
-    const situacao = !l ? ["inativa", "desativada"] : l.status === "prevista" ? ["prev", "prevista em " + mesCurto] : ["paga", "paga em " + mesCurto];
-    const onde = f.formaPagamento === "credito" ? (cartaoPorId(f.cartaoId)?.nome || "Crédito") : (FORMAS[f.formaPagamento] || f.formaPagamento);
+    const ehReceita = f.tipo === "receita";
+    const situacao = !l ? ["inativa", "desativada"] : l.status === "prevista" ? ["prev", "prevista em " + mesCurto] : ["paga", (ehReceita ? "recebida em " : "paga em ") + mesCurto];
+    const onde = (ehReceita ? "Receita · " : "") + (f.formaPagamento === "credito" && !ehReceita ? (cartaoPorId(f.cartaoId)?.nome || "Crédito") : (FORMAS[f.formaPagamento] || f.formaPagamento));
     return "<button type=\"button\" class=\"fixa-item" + (l ? "" : " inativa") + "\" data-id=\"" + escapar(f.id) + "\">" +
       "<span class=\"dia-caixa\"><b class=\"num\">" + String(f.diaVencimento).padStart(2, "0") + "</b><small>dia</small></span>" +
       "<span class=\"fixa-t\"><span class=\"fixa-n\">" + escapar(f.descricao) + "</span><small>" + escapar(onde + " · " + categoriaPorId(f.categoriaId).nome) + "</small>" +
       (situacao[0] === "prev" && desatualizado(f) ? "<small class=\"aviso-medio num\">Médio " + formatarReais(f.valorEstimadoCentavos) + " · último " + formatarReais(desatualizado(f).valor) + "</small>" : "") + "</span>" +
-      "<span class=\"fixa-v\"><span class=\"num\">" + formatarReais(l && l.status !== "prevista" ? l.valorCentavos : f.valorEstimadoCentavos) + "</span><small class=\"sit " + situacao[0] + "\">" + escapar(situacao[1]) + "</small></span>" +
+      "<span class=\"fixa-v\"><span class=\"num" + (ehReceita ? " receita" : "") + "\">" + formatarReais(l && l.status !== "prevista" ? l.valorCentavos : f.valorEstimadoCentavos) + "</span><small class=\"sit " + situacao[0] + "\">" + escapar(situacao[1]) + "</small></span>" +
       "<span class=\"seta\" aria-hidden=\"true\">›</span></button>";
   }).join("") : estado.contasFixas.length ? "<div class=\"vazio\"><strong>Nenhuma conta fixa neste mês</strong><span>As contas aparecem a partir do mês do primeiro lançamento.</span></div>"
     : "<div class=\"vazio\"><strong>Nenhuma conta fixa</strong><span>Toque em \"+ Nova conta fixa\".</span></div>";
@@ -2912,18 +2945,31 @@ function desenharFixas() {
 
 // Folha de edição da conta fixa (null = conta nova)
 let fixaAberta = null;
+let fixaTipo = "despesa";
+// Tipo da conta fixa na folha: categorias, forma padrão e reembolso conforme despesa ou receita (v35)
+function aplicarTipoFixa(conta) {
+  const receita = fixaTipo === "receita";
+  document.querySelectorAll("[data-fxtipo]").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.fxtipo === fixaTipo)); b.disabled = Boolean(conta); });
+  const categorias = estado.categorias.filter(c => c.tipo === fixaTipo && c.ativa).map(c => [c.id, c.nome]);
+  const catAtual = conta && !categorias.some(([id]) => id === conta.categoriaId) ? [[conta.categoriaId, categoriaPorId(conta.categoriaId).nome]] : [];
+  const padraoCat = receita ? (categorias.length ? categorias[0][0] : "") : "despesa-moradia-e-contas";
+  $("fxCategoria").innerHTML = opcoesSelect(categorias.concat(catAtual), conta ? conta.categoriaId : padraoCat);
+  const formas = Object.entries(FORMAS).filter(([f]) => !receita || f !== "credito");
+  $("fxForma").innerHTML = opcoesSelect(formas, conta ? conta.formaPagamento : (receita ? "transferencia" : "debito"));
+  $("fxReembCampo").hidden = !receita;
+  $("fxReembDe").value = conta && conta.reembolsoDe ? conta.reembolsoDe : "";
+  atualizarCartaoFixa();
+}
 function abrirFixa(conta) {
   fixaAberta = conta;
+  fixaTipo = conta ? (conta.tipo || "despesa") : "despesa";
   const cartoesAtivos = estado.cartoes.filter(c => c.ativo).map(c => [c.id, c.nome]);
-  const categorias = estado.categorias.filter(c => c.tipo === "despesa" && c.ativa).map(c => [c.id, c.nome]);
-  const catAtual = conta && !categorias.some(([id]) => id === conta.categoriaId) ? [[conta.categoriaId, categoriaPorId(conta.categoriaId).nome]] : [];
   $("tituloFixa").textContent = conta ? "Editar: " + conta.descricao : "Nova conta fixa";
   $("fxDescricao").value = conta ? conta.descricao : "";
   $("fxDia").value = conta ? conta.diaVencimento : "";
   $("fxValor").value = conta ? centavosParaTexto(conta.valorEstimadoCentavos) : "";
-  $("fxForma").innerHTML = opcoesSelect(Object.entries(FORMAS), conta ? conta.formaPagamento : "debito");
   $("fxCartao").innerHTML = opcoesSelect(cartoesAtivos, conta ? conta.cartaoId : "", "Escolha");
-  $("fxCategoria").innerHTML = opcoesSelect(categorias.concat(catAtual), conta ? conta.categoriaId : "despesa-moradia-e-contas");
+  aplicarTipoFixa(conta);
   const ultimo = conta && conta.ativa && estado.ultimoPagoFixa ? estado.ultimoPagoFixa[conta.id] : null;
   const doMesConta = conta ? lancFixasDoMes().filter(l => l.contaFixaId === conta.id) : [];
   const soPrevista = doMesConta.length > 0 && doMesConta.every(l => l.status === "prevista"); // aviso só enquanto a conta do mês não foi confirmada
@@ -2942,14 +2988,14 @@ function abrirFixa(conta) {
   if (!conta) texto = "";
   else if (pagos.length) {
     ver = pagos[0];
-    texto = pagos.length === 1 ? "Paga em " + formatarDataCurta(ver.data) + ": " + formatarReais(ver.valorCentavos) + "."
-      : pagos.length + " pagamentos em " + nomeMes + ": " + formatarReais(pagos.reduce((t, l) => t + l.valorCentavos, 0)) + ".";
+    texto = pagos.length === 1 ? (fixaTipo === "receita" ? "Recebida em " : "Paga em ") + formatarDataCurta(ver.data) + ": " + formatarReais(ver.valorCentavos) + "."
+      : pagos.length + (fixaTipo === "receita" ? " recebimentos em " : " pagamentos em ") + nomeMes + ": " + formatarReais(pagos.reduce((t, l) => t + l.valorCentavos, 0)) + ".";
   } else if (previstos.length) {
     ver = previstos[0];
-    texto = "Prevista para " + formatarDataCurta(ver.data) + ": " + formatarReais(ver.valorCentavos) + " (valor médio). Confirme quando pagar.";
+    texto = "Prevista para " + formatarDataCurta(ver.data) + ": " + formatarReais(ver.valorCentavos) + " (valor médio). " + (fixaTipo === "receita" ? "Confirme quando receber." : "Confirme quando pagar.");
   } else if (!conta.ativa && estado.fimFixa && estado.fimFixa[conta.id]) texto = "Conta desativada. Último lançamento em " + formatarDataCurta(estado.fimFixa[conta.id]) + ".";
   else if (!conta.ativa) texto = "Conta desativada.";
-  else texto = "Nenhum pagamento ligado a esta conta em " + nomeMes + ".";
+  else texto = (fixaTipo === "receita" ? "Nenhum recebimento ligado a esta conta em " : "Nenhum pagamento ligado a esta conta em ") + nomeMes + ".";
   $("fxSituacao").hidden = !texto;
   $("fxSituacao").classList.toggle("paga", pagos.length > 0);
   $("fxSituacaoTexto").textContent = texto;
@@ -2963,18 +3009,20 @@ function abrirFixa(conta) {
   $("fundoFixa").hidden = false;
 }
 function fecharFixa() { $("fundoFixa").hidden = true; fixaAberta = null; }
-function atualizarCartaoFixa() { $("fxCartaoCampo").hidden = $("fxForma").value !== "credito"; }
+function atualizarCartaoFixa() { $("fxCartaoCampo").hidden = fixaTipo === "receita" || $("fxForma").value !== "credito"; }
 async function salvarFixa(e) {
   e.preventDefault();
   const descricao = $("fxDescricao").value.trim();
   const dia = Number($("fxDia").value);
   const valor = textoParaCentavos($("fxValor").value);
   const forma = $("fxForma").value;
-  const cartaoId = forma === "credito" ? ($("fxCartao").value || null) : null;
+  const cartaoId = forma === "credito" && fixaTipo !== "receita" ? ($("fxCartao").value || null) : null;
   const categoriaId = $("fxCategoria").value;
+  const reembolsoDe = fixaTipo === "receita" ? ($("fxReembDe").value || null) : null;
   if (!descricao || !Number.isInteger(dia) || dia < 1 || dia > 31 || !valor || valor <= 0) { mostrarAviso("Preencha a conta, o dia (1 a 31) e um valor médio maior que zero.", null); return; }
-  if (forma === "credito" && !cartaoId) { mostrarAviso("Escolha o cartão da conta no crédito.", null); return; }
-  const dados = { descricao, diaVencimento: dia, valorEstimadoCentavos: valor, formaPagamento: forma, cartaoId, categoriaId };
+  if (forma === "credito" && fixaTipo !== "receita" && !cartaoId) { mostrarAviso("Escolha o cartão da conta no crédito.", null); return; }
+  if (!categoriaId) { mostrarAviso("Escolha a categoria.", null); return; }
+  const dados = { descricao, diaVencimento: dia, valorEstimadoCentavos: valor, formaPagamento: forma, cartaoId, categoriaId, tipo: fixaTipo, reembolsoDe };
   const conta = fixaAberta;
   if (conta) {
     const mudanca = {};
@@ -3480,7 +3528,7 @@ function calcularComprometido() {
     else porMes[l.competencia].outras += v;
   }
   // Contas fixas que ainda não viraram prevista (o mês ainda não foi aberto): usa o valor médio
-  for (const conta of estado.contasFixas.filter(c => c.ativa)) {
+  for (const conta of estado.contasFixas.filter(c => c.ativa && c.tipo !== "receita")) {
     const cartao = conta.formaPagamento === "credito" ? cartaoPorId(conta.cartaoId) : null;
     for (const mesData of [somarMeses(meses[0], -1)].concat(meses)) {
       if (idsExistentes.has("fixa-" + conta.id + "-" + mesData)) continue;
@@ -3995,6 +4043,11 @@ function ligarEventos() {
   });
   $("fxUsarUltimo").addEventListener("click", e => { $("fxValor").value = e.currentTarget.dataset.valor; $("fxSugestao").hidden = true; $("fxValor").focus(); });
   $("formFixa").addEventListener("submit", salvarFixa);
+  document.querySelectorAll("[data-fxtipo]").forEach(b => b.addEventListener("click", () => {
+    if (fixaAberta) return; // o tipo só se escolhe ao criar
+    fixaTipo = b.dataset.fxtipo;
+    aplicarTipoFixa(null);
+  }));
   $("fxAlternar").addEventListener("click", async () => { const conta = fixaAberta; if (!conta) return; fecharFixa(); await alternarFixa(conta); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("fundoFixa").hidden) fecharFixa(); });
   // Início
@@ -4195,17 +4248,7 @@ function ligarEventos() {
     if (ok) campo.value = "";
   }));
 
-  // Ao voltar para o app (estava em segundo plano), vai sempre para o Início (v32)
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState !== "visible" || $("app").hidden) return;
-    const formAberto = !$("fundoForm").hidden;
-    if (formAberto && ($("fValor").value.trim() || $("fDescricao").value.trim())) return; // não perde o que foi digitado
-    if (formAberto) fecharForm();
-    if (!$("fundoFixa").hidden) fecharFixa();
-    if (!$("fundoMeses").hidden) $("fundoMeses").hidden = true;
-    if (!$("fundoConfirma").hidden) $("fundoConfirma").hidden = true;
-    if (estado.tela !== "inicio") irPara("inicio"); else window.scrollTo(0, 0);
-  });
+  // v35: ao voltar para o app ele continua na tela em que estava (a ida automática ao Início da v32 foi retirada a pedido)
 
   // Redesenha os gráficos quando o aparelho troca entre claro e escuro
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (estado.tela === "analise") desenharAnalise(); });
