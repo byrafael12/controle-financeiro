@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-+RwSM9s807CAwjwUqsJN3GDk3A/lFyzovlzj0DVSmnI='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-/mHiyrGb9qb95deTi3S8AaDQVenMRaTRB5Ga2Y9sd/k='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 39, 02/11/2026: versão de demonstração com dados fictícios (demo.html); o app guardado no aparelho para uso sem internet não se mistura com a demonstração. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 40, 07/11/2026: selo Prevista em destaque e selo Vencida; tocar em Pendências abre uma folha só com as pendências, de qualquer mês. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -30,6 +30,7 @@
   --receita: #1d7547;
   --despesa: #b3261e;
   --previsto: #727a8c;
+  --ambar: #8a5a00; --ambar-fundo: #fff1d6; --ambar-borda: #e9b75c; --coral-fundo: #fde7e5; --coral-borda: #e8a39d;
   --sombra: 0 1px 2px rgb(20 25 40 / .06), 0 8px 24px rgb(20 25 40 / .08);
   --fonte: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --raio: 14px;
@@ -40,6 +41,7 @@
     --bg: #0e1117; --surface: #171b24; --surface-2: #202634; --fg: #e8eaf0; --muted: #9ba3b5;
     --line: #2b3240; --accent: #9db1ff; --accent-fg: #0e1117; --accent-soft: #232c45;
     --receita: #4fc48c; --despesa: #ff7d73; --previsto: #8b93a6;
+    --ambar: #f5b84a; --ambar-fundo: rgb(245 184 74 / .14); --ambar-borda: rgb(245 184 74 / .45); --coral-fundo: rgb(255 125 115 / .14); --coral-borda: rgb(255 125 115 / .5);
     --sombra: 0 1px 2px rgb(0 0 0 / .4), 0 8px 24px rgb(0 0 0 / .35);
     color-scheme: dark;
   }
@@ -48,6 +50,7 @@
   --bg: #0e1117; --surface: #171b24; --surface-2: #202634; --fg: #e8eaf0; --muted: #9ba3b5;
   --line: #2b3240; --accent: #9db1ff; --accent-fg: #0e1117; --accent-soft: #232c45;
   --receita: #4fc48c; --despesa: #ff7d73; --previsto: #8b93a6;
+    --ambar: #f5b84a; --ambar-fundo: rgb(245 184 74 / .14); --ambar-borda: rgb(245 184 74 / .45); --coral-fundo: rgb(255 125 115 / .14); --coral-borda: rgb(255 125 115 / .5);
   --sombra: 0 1px 2px rgb(0 0 0 / .4), 0 8px 24px rgb(0 0 0 / .35);
   color-scheme: dark;
 }
@@ -559,6 +562,31 @@ div.hb { cursor: default; }
 .regras li.ok { color: var(--receita); }
 .regras li.ok::before { content: "✓ "; }
 .login .erro { color: var(--despesa, #c0392b); min-height: 1.2em; margin: 0; font-size: .9rem; }
+/* v40: Prevista (âmbar) e Vencida (coral) */
+.selo.prevista, .selo.vencida { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 1px 8px 1px 6px; }
+.selo.prevista { background: var(--ambar-fundo); color: var(--ambar); border: 1px solid var(--ambar-borda); }
+.selo.vencida { background: var(--coral-fundo); color: var(--despesa); border: 1px solid var(--coral-borda); }
+.selo svg { width: 11px; height: 11px; flex: none; }
+.item.prevista, .item.vencida { position: relative; }
+.item.prevista::before, .item.vencida::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+.item.prevista::before { background: var(--ambar); }
+.item.vencida::before { background: var(--despesa); }
+.item.prevista .desc, .item.vencida .desc { color: var(--fg); }
+.item.prevista .valor { color: var(--ambar); }
+.item.vencida .valor { color: var(--despesa); }
+.item.vencida { background: linear-gradient(90deg, var(--coral-fundo), transparent 65%); }
+.tabela-lanc .linha-tabela.prevista td, .tabela-lanc .linha-tabela.vencida td { color: var(--fg); }
+.tabela-lanc .linha-tabela.prevista td:first-child { box-shadow: inset 4px 0 0 var(--ambar); }
+.tabela-lanc .linha-tabela.vencida td:first-child { box-shadow: inset 4px 0 0 var(--despesa); }
+.tabela-lanc .linha-tabela.vencida td { background: var(--coral-fundo); }
+.tabela-lanc .linha-tabela.prevista td.valor { color: var(--ambar); }
+.pend-inicio { border-color: var(--coral-borda); background: var(--coral-fundo); }
+.pend-inicio small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.folha-pend { max-width: 520px; }
+.folha-pend .pend-grupo { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 16px 2px 6px; }
+.folha-pend .acao { color: var(--accent); font-weight: 600; }
+.folha-pend .pend-total { display: flex; justify-content: space-between; border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; font-size: 14px; color: var(--muted); }
+.folha-pend .pend-total b { color: var(--fg); }
 </style>
 </head>
 <body>
@@ -885,7 +913,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 39: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 40: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -935,6 +963,14 @@ div.hb { cursor: default; }
 </div>
 
 <!-- Formulário de lançamento (abre como folha) -->
+<div class="fundo" id="fundoPend" hidden>
+  <div class="folha folha-pend" role="dialog" aria-modal="true" aria-labelledby="tituloPend">
+    <div class="folha-topo"><h2 id="tituloPend">Pendências</h2><button type="button" class="botao texto" id="fecharPend">Fechar</button></div>
+    <p class="dica" id="pendDica">Toque para confirmar ou corrigir. Depois de salvar, você volta para esta lista.</p>
+    <div id="listaPend"></div>
+  </div>
+</div>
+
 <div class="fundo" id="fundoForm" hidden>
   <div class="folha" role="dialog" aria-modal="true" aria-labelledby="tituloForm">
     <div class="folha-topo">
@@ -2183,10 +2219,14 @@ function desenharInicio() {
       "<span class=\"venc-t\"><span class=\"venc-n\">" + escapar(i.nome) + "</span><small>" + escapar(i.meta) + "</small></span><span class=\"num venc-v\">" + formatarReais(i.valor) + "</span></div>"
     ).join("") : "<p class=\"dica\">Nada vence até " + formatarDataCurta(ate) + ".</p>";
     // Pendências: contas previstas que já venceram e não foram confirmadas
-    const aConfirmar = todos.filter(l => l.status === "prevista" && l.data <= hoje).length;
+    const pend = linhasPendencias();
+    const aConfirmar = pend.fixas.length + pend.revisar.length;
+    const partes = [];
+    if (pend.fixas.length) partes.push(pend.fixas.length + (pend.fixas.length === 1 ? " conta prevista vencida" : " contas previstas vencidas"));
+    if (pend.revisar.length) partes.push(pend.revisar.length + " para revisar");
     $("pendInicio").hidden = aConfirmar === 0;
-    $("pendInicio").innerHTML = "<span class=\"qtd num\">" + aConfirmar + "</span><span><b>Pendências</b>: " + aConfirmar +
-      (aConfirmar === 1 ? " prevista com data vencida ainda não confirmada" : " previstas com data vencida ainda não confirmadas") + "</span><span aria-hidden=\"true\">›</span>";
+    $("pendInicio").innerHTML = "<span class=\"qtd num\">" + aConfirmar + "</span><span><b>Pendências</b>: " + aConfirmar + " para confirmar<small>" + partes.join(" · ") +
+      "</small></span><span aria-hidden=\"true\">›</span>";
   } else {
     $("pendInicio").hidden = true;
   }
@@ -2453,9 +2493,9 @@ function desenharLista() {
     const c = categoriaPorId(l.categoriaId);
     const pag = [cartaoPorId(l.cartaoId)?.nome || FORMAS[l.formaPagamento] || l.formaPagamento, l.parcela ? "parcela " + l.parcela.numero + "/" + l.parcela.total : "",
       l.competencia !== l.data.slice(0, 7) ? "fatura " + rotuloMes(l.competencia) : ""].filter(Boolean).join(" · ");
-    const selos = (l.status === "prevista" ? "<span class=\"selo prevista\">Prevista</span>" : "") + (l.pendenteEnvio ? "<span class=\"selo pendente\">Aguardando envio</span>" : "") +
+    const selos = seloPrevista(l) + (l.pendenteEnvio ? "<span class=\"selo pendente\">Aguardando envio</span>" : "") +
       (l.reembolso || l.reembolsoDe ? "<span class=\"selo reemb\">" + ((l.reembolso ? l.reembolso.quem : l.reembolsoDe) === "vigor" ? "Vigor" : "Paola") + "</span>" : "");
-    return "<tr class=\"linha-tabela" + (l.status === "prevista" ? " prevista" : "") + "\" data-id=\"" + escapar(l.id) + "\" tabindex=\"0\"><td class=\"num\">" + formatarDataCurta(l.data).slice(0, 5) + "</td>" +
+    return "<tr class=\"linha-tabela" + classePrevista(l) + "\" data-id=\"" + escapar(l.id) + "\" tabindex=\"0\"><td class=\"num\">" + formatarDataCurta(l.data).slice(0, 5) + "</td>" +
       "<td><span class=\"desc\">" + selos + escapar(l.descricao) + "</span>" + (l.reembolso ? "<span class=\"mudo\"> · reembolsa " + formatarReais(l.reembolso.valorCentavos) + "</span>" : "") + (l.observacao ? "<span class=\"mudo\"> · " + escapar(l.observacao) + "</span>" : "") + "</td>" +
       "<td><span class=\"cat-celula\"><i class=\"ponto\" style=\"background:" + escapar(c.cor) + "\"></i>" + escapar(c.nome) + "</span></td>" +
       "<td class=\"mudo\">" + escapar(pag) + "</td><td class=\"d num valor " + l.tipo + "\">" + (l.tipo === "despesa" ? "-" : "+") + formatarReais(l.valorCentavos) + "</td></tr>";
@@ -2481,9 +2521,9 @@ function desenharLista() {
     for (const l of itens) {
       const c = categoriaPorId(l.categoriaId);
       const sinal = l.tipo === "despesa" ? "-" : "+";
-      html += "<button type=\"button\" class=\"item" + (l.status === "prevista" ? " prevista" : "") + "\" data-id=\"" + escapar(l.id) + "\">" +
+      html += "<button type=\"button\" class=\"item" + classePrevista(l) + "\" data-id=\"" + escapar(l.id) + "\">" +
         "<span class=\"cor\" style=\"background:" + escapar(c.cor) + "\"></span>" +
-        "<span class=\"texto\"><span class=\"desc\">" + (l.status === "prevista" ? "<span class=\"selo prevista\">Prevista</span>" : "") +
+        "<span class=\"texto\"><span class=\"desc\">" + seloPrevista(l) +
         (l.pendenteEnvio ? "<span class=\"selo pendente\">Aguardando envio</span>" : "") +
         (l.reembolso || l.reembolsoDe ? "<span class=\"selo reemb\">" + ((l.reembolso ? l.reembolso.quem : l.reembolsoDe) === "vigor" ? "Vigor" : "Paola") + "</span>" : "") +
         escapar(l.descricao) + "</span><br><span class=\"meta\">" +
@@ -2594,6 +2634,75 @@ function escolherTipoForm(tipo) {
   atualizarBlocoReembolso();
   if (!form.editando) $("fForma").value = lembrar.ler("ultimaForma-" + tipo, tipo === "receita" ? "transferencia" : "credito");
   atualizarBlocoCredito();
+}
+
+// v40: selo e classe das previstas; com a data já passada, vira "Vencida"
+const ICONE_RELOGIO = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg>";
+const ICONE_ALERTA = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" aria-hidden=\"true\"><path d=\"M12 8v5M12 16.5v.5\"/><circle cx=\"12\" cy=\"12\" r=\"9\"/></svg>";
+function previstaVencida(l) { return l.status === "prevista" && l.data <= dataDeHoje(); }
+function seloPrevista(l) {
+  if (l.status !== "prevista") return "";
+  return previstaVencida(l) ? "<span class=\"selo vencida\">" + ICONE_ALERTA + "Vencida</span>" : "<span class=\"selo prevista\">" + ICONE_RELOGIO + "Prevista</span>";
+}
+function classePrevista(l) { return l.status !== "prevista" ? "" : previstaVencida(l) ? " vencida" : " prevista"; }
+
+// Pendências de qualquer mês: previstas com data até hoje. Compra parcelada vira uma linha só.
+function escutarPendencias() {
+  if (estado.desligarPendencias) estado.desligarPendencias();
+  estado.desligarPendencias = colecaoLancamentos().where("status", "==", "prevista").where("data", "<=", dataDeHoje()).limit(100000).onSnapshot(
+    foto => {
+      estado.pendencias = foto.docs.map(d => ({ id: d.id, ...d.data() }));
+      desenharPendencias();
+      if (estado.tela === "inicio") desenharInicio();
+    },
+    () => {}
+  );
+}
+
+function linhasPendencias() {
+  const porChave = new Map();
+  for (const l of estado.pendencias || []) {
+    if (l.pendenteEnvio) continue;
+    const k = l.grupoParcela || l.id;
+    if (!porChave.has(k)) porChave.set(k, []);
+    porChave.get(k).push(l);
+  }
+  const linhas = [...porChave.values()].map(ls => {
+    ls.sort((a, b) => ((a.parcela && a.parcela.numero) || 0) - ((b.parcela && b.parcela.numero) || 0));
+    return { lanc: ls[0], qtd: ls.length, total: ls.reduce((a, l) => a + l.valorCentavos, 0) };
+  }).sort((a, b) => a.lanc.data.localeCompare(b.lanc.data) || a.lanc.descricao.localeCompare(b.lanc.descricao, "pt-BR"));
+  return { fixas: linhas.filter(x => x.lanc.contaFixaId), revisar: linhas.filter(x => !x.lanc.contaFixaId) };
+}
+
+function abrirPendencias() {
+  $("fundoPend").hidden = false;
+  desenharPendencias();
+}
+
+function fecharPendencias() { $("fundoPend").hidden = true; }
+
+function desenharPendencias() {
+  if ($("fundoPend").hidden) return;
+  const p = linhasPendencias();
+  if (!p.fixas.length && !p.revisar.length) {
+    $("pendDica").hidden = true;
+    $("listaPend").innerHTML = "<div class=\"vazio\"><strong>Tudo em dia</strong><span>Nenhuma pendência para confirmar.</span></div>";
+    return;
+  }
+  $("pendDica").hidden = false;
+  const linha = (x, acao) => {
+    const l = x.lanc, c = categoriaPorId(l.categoriaId);
+    return "<button type=\"button\" class=\"item vencida\" data-id=\"" + escapar(l.id) + "\"><span class=\"cor\" style=\"background:" + escapar(c.cor) + "\"></span>" +
+      "<span class=\"texto\"><span class=\"desc\">" + escapar(l.descricao) + (x.qtd > 1 ? "<span class=\"mudo\"> · " + x.qtd + "x</span>" : "") + "</span><br><span class=\"meta\">" +
+      formatarDataCurta(l.data).slice(0, 5) + " · " + escapar((cartaoPorId(l.cartaoId) || {}).nome || FORMAS[l.formaPagamento] || l.formaPagamento) + " · <span class=\"acao\">" + acao + "</span></span></span>" +
+      "<span class=\"valor num " + l.tipo + "\">" + formatarReais(x.total) + "</span></button>";
+  };
+  const grupo = (titulo, lista, acao) => lista.length ? "<div class=\"pend-grupo\"><span>" + titulo + "</span><span class=\"num\">" + lista.length + "</span></div><div class=\"itens\">" +
+    lista.map(x => linha(x, typeof acao === "function" ? acao(x) : acao)).join("") + "</div>" : "";
+  const total = p.fixas.concat(p.revisar).reduce((a, x) => a + (x.lanc.tipo === "despesa" ? x.total : 0), 0);
+  $("listaPend").innerHTML = grupo("Contas previstas vencidas", p.fixas, x => x.lanc.tipo === "receita" ? "Confirmar recebimento" : "Confirmar pagamento") +
+    grupo("Para revisar (descrição e categoria)", p.revisar, "Revisar") +
+    "<div class=\"pend-total\"><span>Total pendente (despesas)</span><b class=\"num\">" + formatarReais(total) + "</b></div>";
 }
 
 function ehParcelaImportada(l) {
@@ -4107,7 +4216,15 @@ function ligarEventos() {
     exportarCsv({ de: ms[0], ate: ms.at(-1), cats: new Set(analise.cats), botao: $("analiseCsv") });
   });
   $("irPlanejar").addEventListener("click", () => irPara("cartoes"));
-  $("pendInicio").addEventListener("click", () => { estado.filtroTipo = "todos"; estado.filtroSituacao = "todas"; estado.filtroCategoria = ""; estado.busca = ""; $("busca").value = ""; irPara("lancamentos"); });
+  $("pendInicio").addEventListener("click", abrirPendencias); // v40: abre a folha só com as pendências
+  $("fecharPend").addEventListener("click", fecharPendencias);
+  $("fundoPend").addEventListener("click", e => { if (e.target === $("fundoPend")) fecharPendencias(); });
+  $("listaPend").addEventListener("click", e => {
+    const item = e.target.closest(".item");
+    if (!item) return;
+    const lanc = (estado.pendencias || []).find(l => l.id === item.dataset.id);
+    if (lanc) abrirForm(lanc);
+  });
   $("formNovaFixa").addEventListener("submit", async e => {
     e.preventDefault();
     const descricao = $("nfDescricao").value.trim();
@@ -4555,6 +4672,7 @@ function abrirApp(sessao) {
   escutarOrcamentos();
   escutarLancamentos();
   escutarFuturo();
+  escutarPendencias();
   // Cópia automática semanal: roda alguns segundos depois de abrir, sem atrapalhar o uso
   setTimeout(copiaAutomaticaSemanal, 8000);
   if (estado.tela === "cartoes") carregarCreditoSemCartao();
