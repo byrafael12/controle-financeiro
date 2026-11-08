@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-/mHiyrGb9qb95deTi3S8AaDQVenMRaTRB5Ga2Y9sd/k='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-OPpFRSiL9sV6CmP3SDCZkE9yha5SZmUOyp1Xf3gR6OE='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 40, 07/11/2026: selo Prevista em destaque e selo Vencida; tocar em Pendências abre uma folha só com as pendências, de qualquer mês. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 41, 08/11/2026: aviso de fatura de cartão a vencer (1 dia antes), junto das Pendências, até marcar Paguei. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -587,6 +587,14 @@ div.hb { cursor: default; }
 .folha-pend .acao { color: var(--accent); font-weight: 600; }
 .folha-pend .pend-total { display: flex; justify-content: space-between; border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; font-size: 14px; color: var(--muted); }
 .folha-pend .pend-total b { color: var(--fg); }
+/* v41: faturas a pagar (azul) */
+.item.fatura-pagar { position: relative; background: linear-gradient(90deg, var(--accent-soft), transparent 70%); cursor: default; }
+.item.fatura-pagar::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
+.item.fatura-pagar .cor { background: var(--accent); border-radius: 50%; }
+.item.fatura-pagar .valor { color: var(--accent); }
+.item.fatura-pagar .lado { display: grid; justify-items: end; gap: 6px; }
+.item.fatura-pagar .paguei { min-height: 36px; padding: 0 16px; font-size: 14px; }
+.folha-pend .pend-grupo.fatura-pagar { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -913,7 +921,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 40: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 41: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -1094,6 +1102,7 @@ const MAPA_TABELAS = {
   },
   orcamentos: { tabela: "orcamentos", chave: "categoria_id", campos: { valorPlanejadoCentavos: "valor_planejado_centavos" } },
   geracoes: { tabela: "geracoes", chave: "mes", campos: { contas: "contas", atualizadoEm: "atualizado_em" } },
+  faturasPagas: { tabela: "faturas_pagas", chave: "id", campos: { cartaoId: "cartao_id", competencia: "competencia", pagoEm: "pago_em" } },
   // Uma linha por usuário; no app é o documento "geral"
   config: {
     tabela: "config", chave: null,
@@ -2205,7 +2214,7 @@ function desenharInicio() {
         if (venc < hoje || venc > ate) continue;
         const compras = todos.filter(l => l.tipo === "despesa" && l.cartaoId === c.id && l.competencia === comp);
         const total = compras.reduce((a, l) => a + l.valorCentavos, 0);
-        if (total > 0) itens.push({ data: venc, nome: "Fatura " + c.nome, meta: compras.length + (compras.length === 1 ? " compra" : " compras"), valor: total });
+        if (total > 0) itens.push({ data: venc, nome: "Fatura " + c.nome, meta: compras.length + (compras.length === 1 ? " compra" : " compras") + (faturaPaga(c.id, comp) ? " · paga" : ""), valor: total });
       }
     }
     for (const l of todos) {
@@ -2220,8 +2229,9 @@ function desenharInicio() {
     ).join("") : "<p class=\"dica\">Nada vence até " + formatarDataCurta(ate) + ".</p>";
     // Pendências: contas previstas que já venceram e não foram confirmadas
     const pend = linhasPendencias();
-    const aConfirmar = pend.fixas.length + pend.revisar.length;
+    const aConfirmar = pend.faturas.length + pend.fixas.length + pend.revisar.length;
     const partes = [];
+    if (pend.faturas.length) partes.push(pend.faturas.length + (pend.faturas.length === 1 ? " fatura a pagar" : " faturas a pagar"));
     if (pend.fixas.length) partes.push(pend.fixas.length + (pend.fixas.length === 1 ? " conta prevista vencida" : " contas previstas vencidas"));
     if (pend.revisar.length) partes.push(pend.revisar.length + " para revisar");
     $("pendInicio").hidden = aConfirmar === 0;
@@ -2636,6 +2646,75 @@ function escolherTipoForm(tipo) {
   atualizarBlocoCredito();
 }
 
+// v41: faturas de cartão a pagar. O aviso aparece 1 dia antes do vencimento e só some quando a fatura é marcada como paga ("Paguei").
+// Vale para as faturas que vencem a partir de 16/11/2026. Marcar como paga não cria lançamento (as compras já estão no app).
+const FATURAS_AVISO_DESDE = "2026-11-16";
+
+function idFaturaPaga(cartaoId, competencia) { return cartaoId + "|" + competencia; }
+
+function escutarFaturas() {
+  if (estado.desligarFaturas) estado.desligarFaturas();
+  if (estado.desligarFaturasPagas) estado.desligarFaturasPagas();
+  const ate = somarMeses(competenciaDeHoje(), 1);
+  estado.desligarFaturas = colecaoLancamentos().where("competencia", ">=", FATURAS_AVISO_DESDE.slice(0, 7)).where("competencia", "<=", ate).limit(100000).onSnapshot(
+    foto => { estado.lancFaturas = foto.docs.map(d => ({ id: d.id, ...d.data() })); aoMudarFaturas(); },
+    () => {}
+  );
+  estado.desligarFaturasPagas = estado.raiz.collection("faturasPagas").limit(10000).onSnapshot(
+    foto => { estado.faturasPagas = new Map(foto.docs.map(d => [d.id, d.data()])); aoMudarFaturas(); },
+    () => {}
+  );
+}
+
+function aoMudarFaturas() {
+  desenharPendencias();
+  if (estado.tela === "inicio") desenharInicio();
+}
+
+function faturaPaga(cartaoId, competencia) { return Boolean(estado.faturasPagas && estado.faturasPagas.has(idFaturaPaga(cartaoId, competencia))); }
+
+// Faturas com aviso hoje: vencimento a partir de 16/11/2026, a partir da véspera, com valor, ainda não marcadas como pagas
+function faturasAPagar() {
+  if (!estado.lancFaturas || !estado.faturasPagas) return [];
+  const hoje = dataDeHoje();
+  const somas = new Map();
+  for (const l of estado.lancFaturas) {
+    if (l.tipo !== "despesa" || !l.cartaoId || l.pendenteEnvio) continue;
+    const k = idFaturaPaga(l.cartaoId, l.competencia);
+    const s = somas.get(k) || { cartaoId: l.cartaoId, competencia: l.competencia, total: 0, qtd: 0 };
+    s.total += l.valorCentavos; s.qtd++;
+    somas.set(k, s);
+  }
+  const lista = [];
+  for (const [k, s] of somas) {
+    const cartao = cartaoPorId(s.cartaoId);
+    if (!cartao || s.total <= 0 || estado.faturasPagas.has(k)) continue;
+    const venc = dataVencimento(s.competencia, cartao);
+    if (venc < FATURAS_AVISO_DESDE) continue;
+    const vespera = new Date(Date.parse(venc + "T12:00:00Z") - 864e5).toISOString().slice(0, 10);
+    if (hoje < vespera) continue;
+    lista.push({ id: k, cartao, competencia: s.competencia, venc, total: s.total, qtd: s.qtd, atrasada: hoje > venc });
+  }
+  return lista.sort((a, b) => a.venc.localeCompare(b.venc) || a.cartao.nome.localeCompare(b.cartao.nome, "pt-BR"));
+}
+
+function textoVencimento(f) {
+  const hoje = dataDeHoje();
+  if (f.venc === hoje) return "vence hoje";
+  if (f.atrasada) return "venceu em " + formatarDataCurta(f.venc).slice(0, 5);
+  return "vence amanhã, " + formatarDataCurta(f.venc).slice(0, 5);
+}
+
+async function marcarFaturaPaga(id) {
+  const f = faturasAPagar().find(x => x.id === id);
+  if (!f) return;
+  const ok = await gravarComSeguranca(
+    () => estado.raiz.collection("faturasPagas").doc(id).set({ cartaoId: f.cartao.id, competencia: f.competencia, pagoEm: new Date().toISOString() }),
+    "Não consegui marcar a fatura como paga."
+  );
+  if (ok) mostrarAviso("Fatura " + f.cartao.nome + " de " + formatarReais(f.total) + " marcada como paga.", null);
+}
+
 // v40: selo e classe das previstas; com a data já passada, vira "Vencida"
 const ICONE_RELOGIO = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg>";
 const ICONE_ALERTA = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" aria-hidden=\"true\"><path d=\"M12 8v5M12 16.5v.5\"/><circle cx=\"12\" cy=\"12\" r=\"9\"/></svg>";
@@ -2671,7 +2750,7 @@ function linhasPendencias() {
     ls.sort((a, b) => ((a.parcela && a.parcela.numero) || 0) - ((b.parcela && b.parcela.numero) || 0));
     return { lanc: ls[0], qtd: ls.length, total: ls.reduce((a, l) => a + l.valorCentavos, 0) };
   }).sort((a, b) => a.lanc.data.localeCompare(b.lanc.data) || a.lanc.descricao.localeCompare(b.lanc.descricao, "pt-BR"));
-  return { fixas: linhas.filter(x => x.lanc.contaFixaId), revisar: linhas.filter(x => !x.lanc.contaFixaId) };
+  return { faturas: faturasAPagar(), fixas: linhas.filter(x => x.lanc.contaFixaId), revisar: linhas.filter(x => !x.lanc.contaFixaId) };
 }
 
 function abrirPendencias() {
@@ -2684,7 +2763,7 @@ function fecharPendencias() { $("fundoPend").hidden = true; }
 function desenharPendencias() {
   if ($("fundoPend").hidden) return;
   const p = linhasPendencias();
-  if (!p.fixas.length && !p.revisar.length) {
+  if (!p.faturas.length && !p.fixas.length && !p.revisar.length) {
     $("pendDica").hidden = true;
     $("listaPend").innerHTML = "<div class=\"vazio\"><strong>Tudo em dia</strong><span>Nenhuma pendência para confirmar.</span></div>";
     return;
@@ -2699,8 +2778,12 @@ function desenharPendencias() {
   };
   const grupo = (titulo, lista, acao) => lista.length ? "<div class=\"pend-grupo\"><span>" + titulo + "</span><span class=\"num\">" + lista.length + "</span></div><div class=\"itens\">" +
     lista.map(x => linha(x, typeof acao === "function" ? acao(x) : acao)).join("") + "</div>" : "";
-  const total = p.fixas.concat(p.revisar).reduce((a, x) => a + (x.lanc.tipo === "despesa" ? x.total : 0), 0);
-  $("listaPend").innerHTML = grupo("Contas previstas vencidas", p.fixas, x => x.lanc.tipo === "receita" ? "Confirmar recebimento" : "Confirmar pagamento") +
+  const total = p.fixas.concat(p.revisar).reduce((a, x) => a + (x.lanc.tipo === "despesa" ? x.total : 0), 0) + p.faturas.reduce((a, f) => a + f.total, 0);
+  const linhaFatura = f => "<div class=\"item fatura-pagar\"><span class=\"cor\"></span><span class=\"texto\"><span class=\"desc\">Fatura " + escapar(f.cartao.nome) + "</span><br><span class=\"meta\">" +
+    textoVencimento(f) + " · " + f.qtd + (f.qtd === 1 ? " compra" : " compras") + "</span></span><span class=\"lado\"><span class=\"valor num\">" + formatarReais(f.total) + "</span>" +
+    "<button type=\"button\" class=\"botao primario paguei\" data-paguei=\"" + escapar(f.id) + "\">Paguei</button></span></div>";
+  const faturasHtml = p.faturas.length ? "<div class=\"pend-grupo fatura-pagar\"><span>Faturas a pagar</span><span class=\"num\">" + p.faturas.length + "</span></div><div class=\"itens\">" + p.faturas.map(linhaFatura).join("") + "</div>" : "";
+  $("listaPend").innerHTML = faturasHtml + grupo("Contas previstas vencidas", p.fixas, x => x.lanc.tipo === "receita" ? "Confirmar recebimento" : "Confirmar pagamento") +
     grupo("Para revisar (descrição e categoria)", p.revisar, "Revisar") +
     "<div class=\"pend-total\"><span>Total pendente (despesas)</span><b class=\"num\">" + formatarReais(total) + "</b></div>";
 }
@@ -3702,7 +3785,7 @@ function desenharGraficoFuturo() {
 }
 
 /* ---------- Leitura completa do banco (backup e exportação) ---------- */
-const COLECOES_BACKUP = ["categorias", "cartoes", "contasFixas", "orcamentos", "geracoes", "config"];
+const COLECOES_BACKUP = ["categorias", "cartoes", "contasFixas", "orcamentos", "geracoes", "config", "faturasPagas"];
 
 async function lerTodosLancamentos() {
   const anoAtual = Number(competenciaDeHoje().slice(0, 4));
@@ -4220,7 +4303,10 @@ function ligarEventos() {
   $("fecharPend").addEventListener("click", fecharPendencias);
   $("fundoPend").addEventListener("click", e => { if (e.target === $("fundoPend")) fecharPendencias(); });
   $("listaPend").addEventListener("click", e => {
+    const paguei = e.target.closest("[data-paguei]");
+    if (paguei) { paguei.disabled = true; marcarFaturaPaga(paguei.dataset.paguei).finally(() => { paguei.disabled = false; }); return; }
     const item = e.target.closest(".item");
+    if (item && item.classList.contains("fatura-pagar")) return;
     if (!item) return;
     const lanc = (estado.pendencias || []).find(l => l.id === item.dataset.id);
     if (lanc) abrirForm(lanc);
@@ -4673,6 +4759,7 @@ function abrirApp(sessao) {
   escutarLancamentos();
   escutarFuturo();
   escutarPendencias();
+  escutarFaturas();
   // Cópia automática semanal: roda alguns segundos depois de abrir, sem atrapalhar o uso
   setTimeout(copiaAutomaticaSemanal, 8000);
   if (estado.tela === "cartoes") carregarCreditoSemCartao();
