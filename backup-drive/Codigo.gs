@@ -9,7 +9,9 @@
  *   3. Monta o JSON no mesmo formato do botão "Baixar backup" do app (dá para restaurar no app).
  *   4. Grava o arquivo na pasta do Drive informada e confere o tamanho gravado.
  *   5. Marca no app a data do último backup.
- *   6. O primeiro backup de cada mês é o "mensal": só nele vai o e-mail de OK. Se falhar, o e-mail vai sempre.
+ *   6. O primeiro backup de cada mês é o "mensal": só nele vai o e-mail de OK.
+ *      Se falhar, tenta de novo sozinho 1 hora depois (backupRepetir); o e-mail de FALHOU só vai se a segunda tentativa
+ *      também falhar, com o motivo exato das duas (desde 09/11/2026). Se a segunda der certo, vai um e-mail avisando.
  *   7. Organiza a pasta: guarda os mensais dos últimos 24 meses e os 16 backups mais recentes (cerca de 8 semanas);
  *      os mais antigos vão para a lixeira do Drive (recuperáveis por 30 dias).
  *
@@ -58,7 +60,15 @@ const MENSAIS_GUARDADOS = 24;
 const SEMANAIS_GUARDADOS = 16; // 2 por semana = cerca de 8 semanas
 
 /** Agendado: roda toda segunda-feira e toda quinta-feira. */
-function backupSemanal() {
+function backupSemanal() { executarBackup(false); }
+
+/** Segunda tentativa automática, 1 hora depois de uma falha (criada pelo próprio script e apagada ao rodar). */
+function backupRepetir() {
+  for (const g of ScriptApp.getProjectTriggers()) if (g.getHandlerFunction() === "backupRepetir") ScriptApp.deleteTrigger(g);
+  executarBackup(true);
+}
+
+function executarBackup(ehRepeticao) {
   const props = PropertiesService.getScriptProperties();
   const email = props.getProperty("EMAIL");
   try {
@@ -67,7 +77,14 @@ function backupSemanal() {
     const ehMensal = !listarBackups(pasta).some(function (b) { return b.mes === mesAtual; });
     const resumo = fazerBackup(props);
     const limpeza = organizarPasta(pasta);
-    if (ehMensal) {
+    const primeiraFalha = props.getProperty("ERRO_PRIMEIRA_TENTATIVA");
+    props.deleteProperty("ERRO_PRIMEIRA_TENTATIVA");
+    if (ehRepeticao && primeiraFalha) {
+      MailApp.sendEmail(email, "Backup do Controle Financeiro: OK na segunda tentativa (" + resumo.arquivo + ")",
+        "A primeira tentativa de hoje falhou e a segunda, 1 hora depois, deu certo. Não precisa fazer nada.\n\n" +
+        "Primeira tentativa: " + primeiraFalha + "\n\nArquivo: " + resumo.arquivo + " · Lançamentos: " + resumo.lancamentos +
+        "\n\nLink da pasta: " + resumo.linkPasta);
+    } else if (ehMensal) {
       MailApp.sendEmail(email, "Backup mensal do Controle Financeiro: OK (" + resumo.arquivo + ")",
         "Backup mensal salvo no Google Drive. Os outros backups continuam toda segunda e quinta-feira, sem e-mail.\n\n" +
         "Arquivo: " + resumo.arquivo + "\nTamanho: " + resumo.tamanho + " bytes\n" +
@@ -76,8 +93,20 @@ function backupSemanal() {
         "\n\nLink da pasta: " + resumo.linkPasta);
     }
   } catch (erro) {
+    const hora = Utilities.formatDate(new Date(), FUSO, "dd/MM HH:mm");
+    if (!ehRepeticao) {
+      // Primeira falha do dia: sem e-mail; tenta de novo sozinho em 1 hora
+      props.setProperty("ERRO_PRIMEIRA_TENTATIVA", hora + ": " + erro.message);
+      for (const g of ScriptApp.getProjectTriggers()) if (g.getHandlerFunction() === "backupRepetir") ScriptApp.deleteTrigger(g);
+      ScriptApp.newTrigger("backupRepetir").timeBased().after(60 * 60 * 1000).create();
+      Logger.log("Falhou; nova tentativa automática em 1 hora. Motivo: " + erro.message);
+      return;
+    }
+    const primeira = props.getProperty("ERRO_PRIMEIRA_TENTATIVA") || "(sem registro)";
+    props.deleteProperty("ERRO_PRIMEIRA_TENTATIVA");
     MailApp.sendEmail(email, "Backup do Controle Financeiro: FALHOU",
-      "O backup automático de hoje não foi feito.\n\nMotivo: " + erro.message +
+      "O backup automático de hoje não foi feito (2 tentativas, com 1 hora de intervalo).\n\n" +
+      "Primeira tentativa: " + primeira + "\n\nSegunda tentativa (" + hora + "): " + erro.message +
       "\n\nFaça pelo app: Ajustes > Baixar backup completo (JSON), e me mostre esta mensagem.");
     throw erro;
   }
@@ -168,11 +197,21 @@ function entrar(email, senha, chaveTotp) {
   const fator = (corpo.user.factors || []).find(function (f) { return f.factor_type === "totp" && f.status === "verified"; });
   if (!fator) return sessao;
   if (!chaveTotp) throw new Error("A verificação em duas etapas está ativa, mas falta a TOTP_CHAVE nas Propriedades do script.");
-  for (let tentativa = 0; tentativa < 2; tentativa++) {
+  // Até 4 tentativas, cada uma com um código novo (espera o próximo intervalo de 30 s; se o Supabase pedir calma, espera 1 min).
+  // As respostas do Supabase vão para a mensagem de erro, para o e-mail dizer o motivo exato.
+  const respostas = [];
+  let ultimoStatus = 0;
+  for (let tentativa = 0; tentativa < 4; tentativa++) {
+    if (tentativa > 0) Utilities.sleep(ultimoStatus === 429 ? 60000 : 30000 - (Date.now() % 30000) + 1500);
+    const hora = Utilities.formatDate(new Date(), FUSO, "HH:mm:ss");
     const desafio = UrlFetchApp.fetch(SUPABASE_URL + "/auth/v1/factors/" + fator.id + "/challenge", {
       method: "post", contentType: "application/json", muteHttpExceptions: true, headers: cabecalhos(sessao), payload: "{}"
     });
-    if (desafio.getResponseCode() !== 200) throw new Error("Não consegui iniciar a verificação em duas etapas (código " + desafio.getResponseCode() + ").");
+    if (desafio.getResponseCode() !== 200) {
+      ultimoStatus = desafio.getResponseCode();
+      respostas.push(hora + " início da verificação: " + ultimoStatus + " " + resumoResposta(desafio));
+      continue;
+    }
     const v = UrlFetchApp.fetch(SUPABASE_URL + "/auth/v1/factors/" + fator.id + "/verify", {
       method: "post", contentType: "application/json", muteHttpExceptions: true, headers: cabecalhos(sessao),
       payload: JSON.stringify({ challenge_id: JSON.parse(desafio.getContentText()).id, code: gerarCodigoTotp(chaveTotp) })
@@ -180,11 +219,25 @@ function entrar(email, senha, chaveTotp) {
     if (v.getResponseCode() === 200) {
       const s2 = JSON.parse(v.getContentText());
       sessao.token = s2.access_token;
+      if (respostas.length) Logger.log("Verificação em duas etapas aceita na tentativa " + (tentativa + 1) + ". Antes: " + respostas.join(" | "));
       return sessao;
     }
-    Utilities.sleep(2000); // o código pode ter virado no meio do caminho: tenta mais uma vez com o novo
+    ultimoStatus = v.getResponseCode();
+    respostas.push(hora + " código: " + ultimoStatus + " " + resumoResposta(v));
   }
-  throw new Error("Código da verificação em duas etapas recusado. Confira a TOTP_CHAVE nas Propriedades do script.");
+  throw new Error("Verificação em duas etapas recusada nas 4 tentativas. Respostas do Supabase: " + respostas.join(" | ") +
+    ". Se todas disserem código inválido (invalid), confira a TOTP_CHAVE nas Propriedades do script; se disserem 429, foi excesso de tentativas e passa sozinho.");
+}
+
+// Resumo curto da resposta de erro do Supabase (código e mensagem), sem dados sensíveis
+function resumoResposta(r) {
+  const texto = r.getContentText() || "";
+  try {
+    const j = JSON.parse(texto);
+    return ((j.error_code || j.code || j.error || "") + " " + (j.msg || j.message || j.error_description || "")).trim().slice(0, 200);
+  } catch (e) {
+    return texto.slice(0, 200);
+  }
 }
 
 // Código de 6 dígitos (padrão TOTP, o mesmo do Google Authenticator): HMAC-SHA1 a cada 30 segundos
@@ -260,7 +313,7 @@ function marcarUltimoBackup(sessao, quando) {
 /** Rode uma vez: cria os agendamentos (toda segunda e quinta-feira, entre 8h e 9h de Brasília) e apaga os anteriores. Rodar de novo não duplica. */
 function instalarAgendamento() {
   for (const g of ScriptApp.getProjectTriggers()) {
-    if (["backupMensal", "backupSemanal"].indexOf(g.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(g);
+    if (["backupMensal", "backupSemanal", "backupRepetir"].indexOf(g.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(g);
   }
   ScriptApp.newTrigger("backupSemanal").timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(8).inTimezone(FUSO).create();
   ScriptApp.newTrigger("backupSemanal").timeBased().onWeekDay(ScriptApp.WeekDay.THURSDAY).atHour(8).inTimezone(FUSO).create();
