@@ -52,7 +52,7 @@ const TABELAS = [
       categoria_id: "categoriaId", forma_pagamento: "formaPagamento", cartao_id: "cartaoId", status: "status", parcela: "parcela",
       grupo_parcela: "grupoParcela", conta_fixa_id: "contaFixaId", reembolso: "reembolso", reembolso_quem: "reembolsoQuem",
       reembolso_de: "reembolsoDe", observacao: "observacao", origem: "origem", versao_esquema: "versaoEsquema",
-      criado_em: "criadoEm", atualizado_em: "atualizadoEm" } }
+      criado_em: "criadoEm", atualizado_em: "atualizadoEm", consumo_m3: "consumoM3", faturado_kg: "faturadoKg" } }
 ];
 
 const PADRAO_ARQUIVO = /^backup-controle-financeiro-(\d{4}-\d{2})-(\d{2})\.json$/;
