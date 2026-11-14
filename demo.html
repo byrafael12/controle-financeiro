@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-iIKXGQ5FUTYBJW/rQIZiwGwDUlOCukeartNExDaUQVU='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-4kUTu0jzXsyM6FcM4ju2TRUsqkXA/sJ+jfSOeDu1N78='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'none'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, DEMONSTRAÇÃO com dados fictícios (Versão 41). Não se conecta a nenhum banco: os dados ficam só neste aparelho. -->
+<!-- Controle Financeiro, DEMONSTRAÇÃO com dados fictícios (Versão 42). Não se conecta a nenhum banco: os dados ficam só neste aparelho. -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -933,7 +933,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 41: lançamentos, categorias, análise, cartões, parcelas, contas fixas, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 42: lançamentos, categorias, análise, cartões, parcelas, contas fixas, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Demonstração: os dados são fictícios e ficam só neste aparelho; nada é enviado para a internet. "Restaurar demonstração", no topo de Ajustes, volta aos dados originais.</span>
           <span id="infoTotal" class="num"></span>
@@ -1007,6 +1007,10 @@ div.hb { cursor: default; }
         <div class="campo-valor"><span>R$</span><input id="fValor" inputmode="decimal" autocomplete="off" placeholder="0,00" class="num"></div>
       </div>
       <div class="campo"><label for="fDescricao">Descrição</label><input id="fDescricao" maxlength="80" autocomplete="off" placeholder="Ex.: feira, legumes"></div>
+      <div id="blocoGas" class="duas" hidden>
+        <div class="campo"><label for="fGasM3" id="rotGasM3">Consumo (m³)</label><input id="fGasM3" inputmode="decimal" autocomplete="off" placeholder="Ex.: 12,5"></div>
+        <div class="campo"><label for="fGasKg" id="rotGasKg">Faturado (kg)</label><input id="fGasKg" inputmode="decimal" autocomplete="off" placeholder="Ex.: 27,3"></div>
+      </div>
       <div class="duas">
         <div class="campo"><span class="rotulo-campo">Data</span>
           <div class="chips-form" id="fDataChips" role="group" aria-label="Data">
@@ -1032,7 +1036,7 @@ div.hb { cursor: default; }
       <p class="previa" id="previaFatura" aria-live="polite"></p>
       <p class="dica" id="avisoParcela" hidden></p>
       <details class="mais-opcoes" id="maisOpcoes"><summary>Mais opções: observação</summary>
-      <div class="campo"><label for="fObs">Observação (opcional)</label><input id="fObs" maxlength="140" autocomplete="off"></div>
+      <div class="campo"><label for="fObs">Observação (opcional)</label><input id="fObs" maxlength="140" autocomplete="off"><p class="dica" id="dicaObs" hidden></p></div>
       <div id="blocoReembolso" hidden>
         <label class="marcar"><input type="checkbox" id="fReemb"> Reembolsável</label>
         <div class="duas" id="reembDetalhe" hidden>
@@ -1095,7 +1099,8 @@ const MAPA_TABELAS = {
       categoriaId: "categoria_id", formaPagamento: "forma_pagamento", cartaoId: "cartao_id", status: "status",
       parcela: "parcela", grupoParcela: "grupo_parcela", contaFixaId: "conta_fixa_id", reembolso: "reembolso",
       reembolsoQuem: "reembolso_quem", reembolsoDe: "reembolso_de", observacao: "observacao", origem: "origem",
-      versaoEsquema: "versao_esquema", criadoEm: "criado_em", atualizadoEm: "atualizado_em"
+      versaoEsquema: "versao_esquema", criadoEm: "criado_em", atualizadoEm: "atualizado_em",
+      consumoM3: "consumo_m3", faturadoKg: "faturado_kg"
     }
   },
   categorias: { tabela: "categorias", chave: "id", campos: { tipo: "tipo", nome: "nome", cor: "cor", ordem: "ordem", ativa: "ativa" } },
@@ -2553,7 +2558,7 @@ function desenharLista() {
         (l.parcela ? " · parcela " + l.parcela.numero + "/" + l.parcela.total : "") +
         (l.competencia !== l.data.slice(0, 7) ? " · fatura " + rotuloMes(l.competencia) : "") +
         (l.formaPagamento === "credito" && l.tipo === "despesa" && !l.cartaoId ? " · sem cartão" : "") +
-        (l.reembolso ? " · reembolsa " + formatarReais(l.reembolso.valorCentavos) : "") +
+        (l.reembolso ? " · reembolsa " + formatarReais(l.reembolso.valorCentavos) : "") + metaGas(l) +
         (l.status === "prevista" ? " · valor médio, toque para confirmar" : "") +
         (l.observacao ? " · " + escapar(l.observacao) : "") + "</span></span>" +
         "<span class=\"valor num " + l.tipo + "\">" + sinal + formatarReais(l.valorCentavos) + "</span></button>";
@@ -2617,6 +2622,7 @@ function sincronizarChipsData(abrirCalendario) {
   const qual = v === hoje ? "0" : v === on ? "-1" : "outra";
   document.querySelectorAll("#fDataChips [data-dia]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.dia === qual)));
   $("fData").hidden = !(qual === "outra" || abrirCalendario);
+  atualizarBlocoGas();
 }
 
 function preencherCartoesForm(selecionado) {
@@ -2650,6 +2656,7 @@ function sugerirReembolsoPelaCategoria() {
 
 function escolherTipoForm(tipo) {
   form.tipo = tipo;
+  atualizarBlocoGas();
   document.querySelectorAll(".tipo-alterna button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.tipo === tipo)));
   preencherCategoriasForm(null);
   sugerirReembolsoPelaCategoria();
@@ -2725,6 +2732,91 @@ async function marcarFaturaPaga(id) {
     "Não consegui marcar a fatura como paga."
   );
   if (ok) mostrarAviso("Fatura " + f.cartao.nome + " de " + formatarReais(f.total) + " marcada como paga.", null);
+}
+
+// v42 (pedido de o titular em 13/11/2026), a partir de dez/2026:
+// 1) Gás Supergasbras: ao confirmar ou editar, pede o consumo em m³ e o total faturado em kg (obrigatórios).
+// 2) Condomínio: ao confirmar a prevista, a observação vem preenchida com a do último pagamento,
+//    com as parcelas "n/N" avançadas (cada trecho separado por " + "); a parcela que já terminou sai.
+const V42_DESDE = "2026-12";
+const ID_GAS = "fixa-gas-supergasbras";
+const OBS_REPETE_FIXAS = ["fixa-condominio"];
+
+function ehGas(lanc, descricao) {
+  if (form.tipo !== "despesa") return false;
+  return Boolean((lanc && lanc.contaFixaId === ID_GAS) || /supergasbras/i.test(descricao || ""));
+}
+
+function numeroDigitado(texto) {
+  const t = String(texto || "").trim().replace(/\s/g, "").replace(",", ".");
+  if (!/^\d{1,5}(\.\d{1,3})?$/.test(t)) return null;
+  const n = Number(t);
+  return n > 0 ? n : null;
+}
+
+function numeroBR(n) { return Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 3 }); }
+
+function atualizarBlocoGas() {
+  const mostrar = ehGas(form.editando, $("fDescricao").value);
+  $("blocoGas").hidden = !mostrar;
+  const obrig = mostrar && String($("fData").value || "").slice(0, 7) >= V42_DESDE;
+  $("rotGasM3").textContent = "Consumo (m³)" + (obrig ? "" : " (opcional)");
+  $("rotGasKg").textContent = "Faturado (kg)" + (obrig ? "" : " (opcional)");
+}
+
+// Confere os campos do gás; devolve { erro } ou { campos } para gravar (vazio se não for gás)
+function camposGas(data) {
+  if ($("blocoGas").hidden) return { campos: {} };
+  const m3 = numeroDigitado($("fGasM3").value), kg = numeroDigitado($("fGasKg").value);
+  const obrig = data.slice(0, 7) >= V42_DESDE;
+  if ($("fGasM3").value.trim() && m3 === null) return { erro: "Consumo em m³: digite um número maior que zero, por exemplo 12,5.", campo: "fGasM3" };
+  if ($("fGasKg").value.trim() && kg === null) return { erro: "Faturado em kg: digite um número maior que zero, por exemplo 27,3.", campo: "fGasKg" };
+  if (obrig && m3 === null) return { erro: "Informe o consumo do gás em m³ (está na conta da Supergasbras).", campo: "fGasM3" };
+  if (obrig && kg === null) return { erro: "Informe o total faturado do gás em kg (está na conta da Supergasbras).", campo: "fGasKg" };
+  return { campos: { consumoM3: m3, faturadoKg: kg } };
+}
+
+function metaGas(l) {
+  return (l.consumoM3 ? " · " + numeroBR(l.consumoM3) + " m³" : "") + (l.faturadoKg ? " · " + numeroBR(l.faturadoKg) + " kg" : "");
+}
+
+// "Ciclone 3/20 = R$202,63 + Acordo trabalhista 2/6 = R$148,19", 1 mês depois:
+// "Ciclone 4/20 = R$202,63 + Acordo trabalhista 3/6 = R$148,19"
+function avancarParcelasObs(texto, meses) {
+  return texto.split(/\s+\+\s+/).map(parte => {
+    const m = parte.match(/(\d{1,3})\s*\/\s*(\d{1,3})/);
+    if (!m) return parte;
+    const n = Number(m[1]), total = Number(m[2]);
+    if (n < 1 || n > total) return parte;
+    if (n + meses > total) return null;
+    return parte.replace(m[0], (n + meses) + "/" + total);
+  }).filter(p => p !== null && p.trim()).join(" + ");
+}
+
+function mesesEntre(de, ate) {
+  const [a1, m1] = de.split("-").map(Number), [a2, m2] = ate.split("-").map(Number);
+  return (a2 * 12 + m2) - (a1 * 12 + m1);
+}
+
+async function sugerirObservacaoFixa(lanc) {
+  $("dicaObs").hidden = true;
+  if (!lanc || lanc.status !== "prevista" || !OBS_REPETE_FIXAS.includes(lanc.contaFixaId)) return;
+  if (lanc.competencia < V42_DESDE || (lanc.observacao || "").trim()) return;
+  let docs;
+  try {
+    const foto = await colecaoLancamentos().where("contaFixaId", "==", lanc.contaFixaId).limit(10000).get();
+    docs = foto.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (erro) { return; }
+  const anterior = docs.filter(l => l.status === "paga" && l.competencia < lanc.competencia && l.competencia >= "2026-11" && (l.observacao || "").trim())
+    .sort((a, b) => b.competencia.localeCompare(a.competencia) || b.data.localeCompare(a.data))[0];
+  if (!anterior) return;
+  const texto = avancarParcelasObs(anterior.observacao.trim(), mesesEntre(anterior.competencia, lanc.competencia)).slice(0, 140);
+  // Só preenche se o formulário ainda for desta conta e o campo continuar vazio
+  if (!texto || form.editando !== lanc || $("fundoForm").hidden || $("fObs").value.trim()) return;
+  $("fObs").value = texto;
+  $("maisOpcoes").open = true;
+  $("dicaObs").textContent = "Copiada de " + rotuloMes(anterior.competencia) + ", com as parcelas avançadas. Confira antes de confirmar.";
+  $("dicaObs").hidden = false;
 }
 
 // v40: selo e classe das previstas; com a data já passada, vira "Vencida"
@@ -2889,6 +2981,8 @@ async function abrirForm(lanc) {
   $("fForma").value = lanc ? lanc.formaPagamento : lembrar.ler("ultimaForma-" + form.tipo, form.tipo === "receita" ? "transferencia" : "credito");
   $("fParcelas").value = lanc && lanc.parcela ? lanc.parcela.total : 1;
   $("fObs").value = lanc ? (lanc.observacao || "") : "";
+  $("fGasM3").value = lanc && lanc.consumoM3 ? numeroBR(lanc.consumoM3) : "";
+  $("fGasKg").value = lanc && lanc.faturadoKg ? numeroBR(lanc.faturadoKg) : "";
   preencherCategoriasForm(lanc ? lanc.categoriaId : null);
   preencherCartoesForm(lanc ? lanc.cartaoId : null);
   // Reembolso
@@ -2919,7 +3013,9 @@ async function abrirForm(lanc) {
   }
   atualizarBlocoCredito();
   sincronizarChipsData(false);
+  atualizarBlocoGas();
   $("fundoForm").hidden = false;
+  sugerirObservacaoFixa(lanc);
   $("fundoForm").querySelector(".folha").scrollTop = 0;
   setTimeout(() => {
     // Só põe o cursor no Valor se o formulário seguir aberto e a pessoa ainda não estiver num campo dele (v33)
@@ -2975,6 +3071,8 @@ async function salvarForm(evento) {
   if (credito && !cartao) { $("erroForm").textContent = "Escolha o cartão da compra."; $("fCartao").focus(); return; }
   if (!Number.isInteger(nParcelas) || nParcelas < 1 || nParcelas > 48) { $("erroForm").textContent = "O número de parcelas vai de 1 a 48."; $("fParcelas").focus(); return; }
   if (centavos < nParcelas) { $("erroForm").textContent = "O valor é baixo demais para tantas parcelas."; return; }
+  const gas = camposGas(data);
+  if (gas.erro) { $("erroForm").textContent = gas.erro; $(gas.campo).focus(); return; }
 
   // Data em mês futuro: pede uma confirmação antes de salvar (evita erro no seletor de data do iPhone)
   const mesDaData = data.slice(0, 7);
@@ -3001,6 +3099,7 @@ async function salvarForm(evento) {
     reembolsoQuem: reembolsavel ? quemReembolsa : null,
     reembolsoDe,
     observacao: $("fObs").value.trim(),
+    ...gas.campos,
     versaoEsquema: VERSAO_ESQUEMA,
     criadoEm: anterior ? (anterior.criadoEm || agora) : agora,
     atualizadoEm: agora
@@ -4363,8 +4462,10 @@ function ligarEventos() {
     if (ok) { $("novoCartaoNome").value = ""; $("novoCartaoMelhor").value = ""; $("novoCartaoVence").value = ""; }
   });
   // Trocou a data depois do aviso: volta ao normal e confere de novo ao salvar
+  $("fDescricao").addEventListener("input", atualizarBlocoGas);
   $("fData").addEventListener("change", () => {
     atualizarPrevia();
+    atualizarBlocoGas();
     if (form.dataConfirmada && form.dataConfirmada !== $("fData").value) {
       $("erroForm").textContent = "";
       $("salvarLanc").textContent = "Salvar";

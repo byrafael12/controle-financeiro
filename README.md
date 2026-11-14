@@ -65,6 +65,8 @@ App pessoal de controle financeiro de Rafael de Freitas: receitas, despesas, car
 - Parcelado (compra nova lançada no app): o total é dividido em centavos e a sobra fica na 1ª parcela.
 - Parcela vinda da planilha (compra em andamento): cada parcela restante é cobrada pelo valor cheio, uma por fatura, sem redividir.
 - Contas fixas nascem como previstas (valor médio) e só viram pagas com valor e data confirmados.
+- Gás Supergasbras (desde a versão 42, a partir de dez/2026): ao confirmar ou editar, consumo em m³ e total faturado em kg são obrigatórios (colunas `consumo_m3` e `faturado_kg`, script `supabase/07`).
+- Condomínio (desde a versão 42, a partir de dez/2026): ao confirmar a prevista, a observação vem do último pagamento com as parcelas "n/N" avançadas (trechos separados por " + "); a parcela que terminou sai.
 - Histórico de jan a set/2026 conta pelo mês da compra; de out/2026 em diante, pela fatura (outubro é mês de transição).
 
 ## Entrega 5 (em andamento)
