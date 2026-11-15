@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 45, 15/11/2026: Importar fatura ou extrato em Ajustes (só conferência: compara com o app e não grava nada). Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 46, 15/11/2026: espaço entre o balão das parcelas do cartão e o Livre para gastar. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -600,7 +600,7 @@ div.hb { cursor: default; }
 :root { --roxo: #6a4bc4; --roxo-fundo: #f1edfb; --roxo-borda: #cfc3f1; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --roxo: #b8a4ff; --roxo-fundo: #241d3d; --roxo-borda: #4a3d7a; } }
 :root[data-theme="dark"] { --roxo: #b8a4ff; --roxo-fundo: #241d3d; --roxo-borda: #4a3d7a; }
-.parc-inicio { width: 100%; display: flex; align-items: center; gap: 10px; border: 1px solid var(--roxo-borda); background: var(--roxo-fundo); color: var(--fg); border-radius: 12px; padding: 10px 14px; min-height: 52px; text-align: left; font: inherit; cursor: pointer; margin-top: 8px; }
+.parc-inicio { width: 100%; display: flex; align-items: center; gap: 10px; border: 1px solid var(--roxo-borda); background: var(--roxo-fundo); color: var(--fg); border-radius: 12px; padding: 10px 14px; min-height: 52px; text-align: left; font: inherit; cursor: pointer; margin: 0 0 14px; } /* v46: mesmo espaço das Pendências */
 .parc-inicio .qtd { background: var(--roxo); color: var(--surface); border-radius: 999px; min-width: 28px; height: 28px; display: grid; place-items: center; font-weight: 700; font-size: 13px; padding: 0 8px; }
 .parc-inicio > span:nth-child(2) { flex: 1; font-size: 14px; }
 .parc-inicio small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
@@ -978,7 +978,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 45: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 46: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
