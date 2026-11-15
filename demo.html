@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-0nbsFZkO2LToCOTIWueTvkEGxiC4jytGJKhH1OT3Ec4='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-o0nvQXD1nu8HpDg/Sh7NZIAh36c4gjJHj7vjJYbcHdM='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'none'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, DEMONSTRAÇÃO com dados fictícios (Versão 46). Não se conecta a nenhum banco: os dados ficam só neste aparelho. -->
+<!-- Controle Financeiro, DEMONSTRAÇÃO com dados fictícios (Versão 47). Não se conecta a nenhum banco: os dados ficam só neste aparelho. -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -639,6 +639,14 @@ div.hb { cursor: default; }
 .imp-n { overflow-wrap: anywhere; }
 .imp-t small { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
 .imp-v { font-weight: 600; white-space: nowrap; }
+/* v47: ações da importação */
+.imp-acao { grid-column: 1 / -1; display: grid; gap: 6px; margin-top: 4px; }
+.imp-acao select, .imp-acao input { width: 100%; min-height: 40px; font: inherit; font-size: 14px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; background: var(--surface); color: var(--fg); }
+.imp-acao .dica { margin: 0; }
+.imp-gravar { margin-top: 12px; }
+#impGravadas { margin-top: 18px; display: grid; gap: 8px; }
+.imp-gravada { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--line); padding-top: 8px; font-size: 14px; }
+.imp-gravada small { display: block; color: var(--muted); font-size: 12px; }
 /* Demonstração: faixa fixa no topo, acima do cabeçalho */
 .faixa-demo { grid-column: 1 / -1; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 8; height: 28px; line-height: 28px;
   padding-inline: 12px; text-align: center; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -964,7 +972,7 @@ div.hb { cursor: default; }
         <div class="secao" id="secaoImportar">
           <span class="rotulo">Importar fatura ou extrato</span>
           <div class="cartao backup">
-            <p class="dica">Compara o arquivo com os lançamentos do app e mostra o que já está lançado, o que é novo e o que precisa da sua análise. Por enquanto só confere: não grava nada.</p>
+            <p class="dica">Compara o arquivo com os lançamentos do app e mostra o que já está lançado, o que é novo e o que precisa da sua análise. Só grava o que você escolher, e dá para desfazer.</p>
             <div class="linha"><button type="button" class="botao primario" id="botaoImportar">Importar arquivo</button></div>
           </div>
         </div>
@@ -990,7 +998,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 46: lançamentos, categorias, análise, cartões, parcelas, contas fixas, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 47: lançamentos, categorias, análise, cartões, parcelas, contas fixas, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Demonstração: os dados são fictícios e ficam só neste aparelho; nada é enviado para a internet. "Restaurar demonstração", no topo de Ajustes, volta aos dados originais.</span>
           <span id="infoTotal" class="num"></span>
@@ -1043,7 +1051,7 @@ div.hb { cursor: default; }
 <div class="fundo" id="fundoImp" hidden>
   <div class="folha folha-imp" role="dialog" aria-modal="true" aria-labelledby="tituloImp">
     <div class="folha-topo"><h2 id="tituloImp">Importar fatura ou extrato</h2><button type="button" class="botao texto" id="fecharImp">Fechar</button></div>
-    <p class="dica">CSV do C6 (fatura), do BB ou do Santander (extrato), ou o CSV padrão que o Claude gera a partir do PDF. Só conferência: nada é gravado.</p>
+    <p class="dica">CSV do C6 (fatura), do BB ou do Santander (extrato), ou o CSV padrão que o Claude gera a partir do PDF. Nada é gravado sem você escolher e confirmar.</p>
     <div class="campo"><label class="botao" for="impArquivo">Escolher arquivo</label><input type="file" id="impArquivo" accept=".csv,text/csv" hidden>
       <span class="mudo" id="impTipo"></span></div>
     <div class="duas" id="impFatura" hidden>
@@ -1054,6 +1062,9 @@ div.hb { cursor: default; }
     <div class="acoes"><button type="button" class="botao primario" id="impComparar" disabled>Comparar com o app</button>
       <button type="button" class="botao" id="impExportar" hidden>Baixar conferência (CSV)</button></div>
     <div id="impResultado" hidden></div>
+    <div class="acoes imp-gravar"><button type="button" class="botao primario" id="impGravar" hidden>Gravar</button></div>
+    <p class="dica" id="impGravarDica" aria-live="polite"></p>
+    <div id="impGravadas"></div>
   </div>
 </div>
 
@@ -1182,7 +1193,7 @@ const MAPA_TABELAS = {
       parcela: "parcela", grupoParcela: "grupo_parcela", contaFixaId: "conta_fixa_id", reembolso: "reembolso",
       reembolsoQuem: "reembolso_quem", reembolsoDe: "reembolso_de", observacao: "observacao", origem: "origem",
       versaoEsquema: "versao_esquema", criadoEm: "criado_em", atualizadoEm: "atualizado_em",
-      consumoM3: "consumo_m3", faturadoKg: "faturado_kg"
+      consumoM3: "consumo_m3", faturadoKg: "faturado_kg", importacaoId: "importacao_id"
     }
   },
   categorias: { tabela: "categorias", chave: "id", campos: { tipo: "tipo", nome: "nome", cor: "cor", ordem: "ordem", ativa: "ativa" } },
@@ -1201,6 +1212,8 @@ const MAPA_TABELAS = {
   orcamentos: { tabela: "orcamentos", chave: "categoria_id", campos: { valorPlanejadoCentavos: "valor_planejado_centavos" } },
   geracoes: { tabela: "geracoes", chave: "mes", campos: { contas: "contas", atualizadoEm: "atualizado_em" } },
   faturasPagas: { tabela: "faturas_pagas", chave: "id", campos: { cartaoId: "cartao_id", competencia: "competencia", pagoEm: "pago_em" } },
+  importacoes: { tabela: "importacoes", chave: "id", campos: { criadoEm: "criado_em", arquivo: "arquivo", tipo: "tipo", cartaoId: "cartao_id", competencia: "competencia",
+    resumo: "resumo", desfazer: "desfazer", desfeitaEm: "desfeita_em" } },
   // Uma linha por usuário; no app é o documento "geral"
   config: {
     tabela: "config", chave: null,
@@ -3232,7 +3245,9 @@ function linhaImp(x) {
     (valor < 0 ? "-" : "") + formatarReais(Math.abs(valor)) + "</span></div>";
 }
 
-function desenharImportacao() {
+function desenharImportacao() { desenharImportacaoComAcoes(); }
+
+function desenharImportacaoSoConferencia() {
   const r = imp.resultado; if (!r) { $("impResultado").hidden = true; return; }
   const g = r.grupos;
   let h = "<p class=\"imp-aviso\">Só conferência: nada foi gravado no app.</p>";
@@ -3252,7 +3267,7 @@ function desenharImportacao() {
 }
 
 async function escolherArquivoImportacao(arquivo) {
-  imp.resultado = null; desenharImportacao(); $("impExportar").hidden = true; $("impErro").textContent = "";
+  imp.resultado = null; imp.escolhas = {}; imp.confirmar = null; desenharImportacao(); $("impExportar").hidden = true; $("impErro").textContent = "";
   if (!arquivo) return;
   imp.arquivo = arquivo;
   imp.texto = await lerTextoImportacao(arquivo);
@@ -3280,6 +3295,8 @@ async function compararArquivo() {
     const foto = await colecaoLancamentos().limit(100000).get();
     const todos = foto.docs.map(d => ({ id: d.id, ...d.data() }));
     imp.resultado = compararImportacao(imp.lido, todos, $("impCartao").value, $("impMes").value);
+    Object.assign(imp.resultado, { todos, cartaoId: $("impCartao").value, mesFatura: $("impMes").value });
+    imp.escolhas = {}; imp.confirmar = null;
     desenharImportacao();
   } catch (erro) {
     console.error(erro);
@@ -3300,8 +3317,241 @@ function exportarImportacao() {
   baixarArquivo("conferencia " + base + ".csv", "﻿" + linhas.join("\r\n"));
 }
 
-function abrirImportacao() { $("fundoImp").hidden = false; }
+function abrirImportacao() { $("fundoImp").hidden = false; carregarImportacoes(); }
 function fecharImportacao() { $("fundoImp").hidden = true; }
+
+// v47: gravar o resultado da importação, item por item, só o que o titular marcar, com "Desfazer esta importação".
+// Nada é marcado sozinho: cada linha começa em "Não fazer nada". Mês fechado não aceita gravação (correção pelo Claude).
+const IMP_FORMAS_EXTRATO = [["pix", "Pix"], ["debito", "Débito"], ["boleto", "Boleto"], ["transferencia", "Transferência"], ["dinheiro", "Dinheiro"]];
+
+function colecaoImportacoes() { return estado.raiz.collection("importacoes"); }
+
+function formaPeloExtrato(desc) {
+  if (/^pix/i.test(desc)) return "pix";
+  if (/boleto|pgto conta|pagam presta|conv[eê]nio/i.test(desc)) return "boleto";
+  if (/saque|dinheiro/i.test(desc)) return "dinheiro";
+  if (/ted|doc |transfer/i.test(desc)) return "transferencia";
+  return "debito";
+}
+
+// Ações possíveis de cada linha do resultado
+function acoesImp(k, x) {
+  const it = x.it;
+  if (!it) return [];
+  const parcelas = imp.lido.tipo === "fatura" && it.parcela && it.parcela.n < it.parcela.t && it.valor > 0
+    ? [["lancar", "Lançar só esta parcela (" + it.parcela.n + "/" + it.parcela.t + ")"], ["lancarTodas", "Lançar as parcelas " + it.parcela.n + " a " + it.parcela.t + " (próximas faturas)"]] : null;
+  if (k === "novo") return [["nada", "Não fazer nada"]].concat(parcelas || [["lancar", "Lançar no app"]]);
+  if (k === "diferente") return [["nada", "Não fazer nada"], ["corrigir", "Corrigir o app: cartão e fatura do arquivo"]];
+  if (k === "duvida") {
+    if (imp.lido.tipo === "fatura" && it.valor < 0) return [];
+    const a = [["nada", "Não fazer nada"]];
+    if (x.l) a.push(["corrigir", "Corrigir o app com a data e o valor do arquivo"]);
+    if (parcelas) a.push(...parcelas); else a.push(["lancar", "Lançar como novo"]);
+    return a;
+  }
+  return [];
+}
+
+// Meses (competência) que a ação vai gravar, para conferir mês fechado
+function mesesDaAcao(k, x, acao) {
+  const it = x.it, fatura = imp.lido.tipo === "fatura", mes = imp.resultado.mesFatura;
+  if (acao === "lancar") return fatura ? [mes] : [it.data.slice(0, 7)];
+  if (acao === "lancarTodas") return [mes];
+  if (acao === "corrigir") return k === "diferente" ? [x.l.competencia, mes] : fatura || x.l.cartaoId ? [x.l.competencia] : [x.l.competencia, it.data.slice(0, 7)];
+  return [];
+}
+
+// Campos que identificam o estado gravado (para o Desfazer saber se o lançamento foi mudado depois pela tela)
+function assinaturaLanc(l) {
+  return [l.valorCentavos, l.data, l.competencia, l.cartaoId || "", l.descricao, l.categoriaId, l.status, l.formaPagamento].join("|");
+}
+
+function linhaImpAcao(k, x, i) {
+  const base = linhaImp(x);
+  const acoes = acoesImp(k, x);
+  if (!acoes.length) return base;
+  const chave = k + "-" + i;
+  const esc = imp.escolhas[chave] || { acao: "nada" };
+  const fechado = acoes.length > 1 && acoes.slice(1).every(([a]) => mesesDaAcao(k, x, a).some(m => mesFechado(m)));
+  if (fechado) return base.replace(/<\/div>$/, "") + "<div class=\"imp-acao\"><span class=\"mudo\">Mês fechado: correção pelo Claude.</span></div></div>";
+  let h = "<div class=\"imp-acao\" data-chave=\"" + chave + "\"><select class=\"imp-sel\" aria-label=\"O que fazer\">" +
+    acoes.map(([v, t]) => "<option value=\"" + v + "\"" + (esc.acao === v ? " selected" : "") + ">" + t + "</option>").join("") + "</select>";
+  if (esc.acao === "lancar" || esc.acao === "lancarTodas") {
+    const tipo = imp.lido.tipo === "fatura" || x.it.valor < 0 ? "despesa" : "receita";
+    const cats = estado.categorias.filter(c => c.tipo === tipo && c.ativa);
+    h += "<input class=\"imp-desc\" maxlength=\"80\" aria-label=\"Descrição\" value=\"" + escapar(esc.descricao ?? x.it.descricao.toLowerCase()) + "\">" +
+      "<select class=\"imp-cat\" aria-label=\"Categoria\"><option value=\"\">Escolha a categoria</option>" +
+      cats.map(c => "<option value=\"" + escapar(c.id) + "\"" + (esc.categoriaId === c.id ? " selected" : "") + ">" + escapar(c.nome) + "</option>").join("") + "</select>";
+    if (imp.lido.tipo === "extrato") {
+      const forma = esc.forma || formaPeloExtrato(x.it.descricao);
+      h += "<select class=\"imp-forma\" aria-label=\"Forma de pagamento\">" + IMP_FORMAS_EXTRATO.map(([v, t]) => "<option value=\"" + v + "\"" + (forma === v ? " selected" : "") + ">" + t + "</option>").join("") + "</select>";
+    }
+    if (esc.acao === "lancarTodas") h += "<span class=\"dica\">Lança as parcelas " + x.it.parcela.n + " a " + x.it.parcela.t + ", uma por fatura a partir de " + rotuloMes(imp.resultado.mesFatura) + ".</span>";
+  }
+  return base.replace(/<\/div>$/, "") + h + "</div></div>";
+}
+
+function escolhasValidas() {
+  const marcadas = Object.entries(imp.escolhas).filter(([, e]) => e.acao !== "nada");
+  const faltando = marcadas.filter(([, e]) => (e.acao === "lancar" || e.acao === "lancarTodas") && (!e.categoriaId || !(e.descricao ?? "x").trim()));
+  return { marcadas, faltando };
+}
+
+function atualizarBotaoGravar() {
+  const { marcadas, faltando } = escolhasValidas();
+  const b = $("impGravar");
+  b.hidden = !imp.resultado || (!marcadas.length && !imp.confirmando);
+  imp.confirmando = false;
+  b.textContent = "Gravar " + marcadas.length + (marcadas.length === 1 ? " alteração" : " alterações");
+  b.disabled = !marcadas.length || faltando.length > 0;
+  $("impGravarDica").textContent = faltando.length ? "Escolha a categoria de " + faltando.length + (faltando.length === 1 ? " lançamento." : " lançamentos.") : "";
+}
+
+// Monta o que será gravado: lançamentos novos e lançamentos alterados (com a versão de antes, para desfazer)
+function planoImportacao(idImp) {
+  const r = imp.resultado, fatura = imp.lido.tipo === "fatura", agora = new Date().toISOString();
+  const novos = [], alterados = new Map();
+  const todosPorId = new Map(r.todos.map(l => [l.id, l]));
+  for (const [chave, e] of Object.entries(imp.escolhas)) {
+    if (e.acao === "nada") continue;
+    const [k, i] = chave.split("-"); const x = r.grupos[k][Number(i)]; const it = x.it;
+    if (e.acao === "lancar" || e.acao === "lancarTodas") {
+      const tipo = fatura || it.valor < 0 ? "despesa" : "receita";
+      const comum = { tipo, descricao: (e.descricao ?? it.descricao.toLowerCase()).trim(), data: it.data, categoriaId: e.categoriaId, status: "paga", contaFixaId: null,
+        reembolso: null, reembolsoQuem: null, reembolsoDe: null, origem: "importacao", importacaoId: idImp, versaoEsquema: VERSAO_ESQUEMA, criadoEm: agora, atualizadoEm: agora,
+        observacao: "Importado de " + imp.arquivo.name + (fatura ? " (" + (cartaoPorId(r.cartaoId)?.nome || "") + ", fatura " + rotuloMes(r.mesFatura) + ")" : "") };
+      if (fatura && it.parcela && e.acao === "lancarTodas") {
+        const grupo = "imp-" + idImp + "-" + k + i;
+        for (let p = it.parcela.n; p <= it.parcela.t; p++) novos.push({ id: grupo + "-" + p, ...comum, valorCentavos: Math.abs(it.valor), competencia: somarMeses(r.mesFatura, p - it.parcela.n),
+          formaPagamento: "credito", cartaoId: r.cartaoId, parcela: { grupo, numero: p, total: it.parcela.t, valorTotalCentavos: Math.abs(it.valor) * it.parcela.t }, grupoParcela: grupo });
+      } else {
+        const id1 = "imp-" + idImp + "-" + k + i;
+        // Parcela avulsa: guarda a data do mês desta parcela (compra + n-1 meses), como as parcelas da planilha
+        novos.push({ id: id1, ...comum, data: fatura && it.parcela ? somarMesesData(it.data, it.parcela.n - 1) : it.data, valorCentavos: Math.abs(it.valor), competencia: fatura ? r.mesFatura : it.data.slice(0, 7),
+          formaPagamento: fatura ? "credito" : e.forma || formaPeloExtrato(it.descricao), cartaoId: fatura ? r.cartaoId : null,
+          parcela: fatura && it.parcela ? { grupo: id1, numero: it.parcela.n, total: it.parcela.t, valorTotalCentavos: Math.abs(it.valor) * it.parcela.t, importada: true } : null, grupoParcela: null });
+      }
+    } else if (e.acao === "corrigir") {
+      const l = x.l;
+      const muda = (alvo, campos) => { const atual = alterados.get(alvo.id) || { antes: alvo, depois: { ...alvo } }; Object.assign(atual.depois, campos, { importacaoId: idImp, atualizadoEm: agora }); alterados.set(alvo.id, atual); };
+      if (k === "diferente") muda(l, { cartaoId: r.cartaoId, competencia: r.mesFatura, formaPagamento: "credito" });
+      else if (fatura) {
+        // Data e valor da fatura. Compra parcelada lançada no app guarda a data da compra em todas as parcelas: muda a data de todas
+        // Parcela da planilha guarda a data de cada mês: todas as parcelas do grupo andam juntas (compra + n-1 meses)
+        const planilha = l.parcela && (l.origem === "planilha" || ehParcelaImportada(l));
+        // (parcela de mês fechado fica como está)
+        if (l.grupoParcela) for (const p of r.todos.filter(y => y.grupoParcela === l.grupoParcela && y.id !== l.id && !mesFechado(y.competencia)))
+          muda(p, { data: planilha && p.parcela ? somarMesesData(it.data, p.parcela.numero - 1) : it.data });
+        muda(l, { valorCentavos: Math.abs(it.valor), data: planilha ? somarMesesData(it.data, l.parcela.numero - 1) : it.data });
+      } else muda(l, { valorCentavos: Math.abs(it.valor), data: it.data, competencia: l.cartaoId ? l.competencia : it.data.slice(0, 7) });
+    }
+  }
+  return { novos, alterados: [...alterados.values()], todosPorId };
+}
+
+async function gravarImportacao() {
+  const { marcadas, faltando } = escolhasValidas();
+  if (!marcadas.length || faltando.length) return;
+  if (estado.banco && !estado.banco.conectado()) { $("impErro").textContent = "Sem internet: gravar a importação só com conexão."; return; }
+  const idImp = new Date().toISOString().replace(/\D/g, "").slice(0, 14) + "-" + Math.random().toString(36).slice(2, 6);
+  const plano = planoImportacao(idImp);
+  const meses = new Set([...plano.novos.map(l => l.competencia), ...plano.alterados.flatMap(a => [a.antes.competencia, a.depois.competencia])]);
+  const fechado = [...meses].find(m => mesFechado(m));
+  if (fechado) { $("impErro").textContent = avisoMesFechado(fechado); return; }
+  // Primeiro toque: mostra o resumo; segundo toque: grava
+  const resumo = (plano.novos.length ? plano.novos.length + (plano.novos.length === 1 ? " lançamento novo" : " lançamentos novos") : "") +
+    (plano.novos.length && plano.alterados.length ? " e " : "") + (plano.alterados.length ? plano.alterados.length + (plano.alterados.length === 1 ? " lançamento corrigido" : " lançamentos corrigidos") : "");
+  if (imp.confirmar !== JSON.stringify(imp.escolhas)) {
+    imp.confirmar = JSON.stringify(imp.escolhas);
+    $("impGravarDica").textContent = "Vai gravar " + resumo + ". Dá para desfazer depois. Toque de novo para confirmar.";
+    $("impGravar").textContent = "Confirmar e gravar";
+    return;
+  }
+  imp.confirmar = null;
+  $("impGravar").disabled = true;
+  const registro = { criadoEm: new Date().toISOString(), arquivo: imp.arquivo.name, tipo: imp.lido.tipo, cartaoId: imp.lido.tipo === "fatura" ? imp.resultado.cartaoId : null,
+    competencia: imp.lido.tipo === "fatura" ? imp.resultado.mesFatura : null, resumo: { novos: plano.novos.length, corrigidos: plano.alterados.length, texto: resumo },
+    desfazer: { criados: plano.novos.map(l => ({ id: l.id, assinatura: assinaturaLanc(l) })), alterados: plano.alterados.map(a => ({ id: a.antes.id, antes: a.antes, assinatura: assinaturaLanc(a.depois) })) }, desfeitaEm: null };
+  // O registro vem antes dos lançamentos: se a gravação parar no meio, o Desfazer continua possível
+  const ok = await gravarComSeguranca(async () => {
+    await colecaoImportacoes().doc(idImp).set(registro);
+    await substituirLancamentos([], plano.novos.concat(plano.alterados.map(a => a.depois)));
+  }, "Não consegui gravar a importação. O que já foi gravado pode ser desfeito em Importações gravadas.");
+  $("impGravar").disabled = false;
+  if (!ok) { carregarImportacoes(); return; }
+  mostrarAviso("Importação gravada: " + resumo + ".", null);
+  imp.ultima = idImp;
+  await compararArquivo();
+  carregarImportacoes();
+}
+
+async function carregarImportacoes() {
+  try {
+    const foto = await colecaoImportacoes().limit(1000).get();
+    imp.gravadas = foto.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)).slice(0, 10);
+  } catch (erro) { imp.gravadas = []; }
+  $("impGravadas").innerHTML = imp.gravadas.length ? "<span class=\"rotulo\">Importações gravadas</span>" + imp.gravadas.map(g =>
+    "<div class=\"imp-gravada\"><span><b>" + escapar(g.arquivo) + "</b><small>" + escapar(dataHoraCurta(g.criadoEm)) + " · " + escapar(g.resumo && g.resumo.texto || "") +
+    (g.desfeitaEm ? " · desfeita em " + escapar(dataHoraCurta(g.desfeitaEm)) : "") + "</small></span>" +
+    (g.desfeitaEm ? "" : "<button type=\"button\" class=\"botao\" data-desfazer=\"" + escapar(g.id) + "\">Desfazer</button>") + "</div>").join("") : "";
+}
+
+// Desfaz: apaga os lançamentos criados e volta os corrigidos para a versão de antes.
+// O que foi mudado depois pela tela (outro atualizadoEm) fica como está e é avisado.
+async function desfazerImportacao(id) {
+  const g = (imp.gravadas || []).find(x => x.id === id);
+  if (!g || g.desfeitaEm) return;
+  if (estado.banco && !estado.banco.conectado()) { mostrarAviso("Sem internet: desfazer só com conexão.", null); return; }
+  if (imp.desfazendo !== id) { imp.desfazendo = id; mostrarAviso("Toque de novo em Desfazer para confirmar: " + (g.resumo && g.resumo.texto || "") + ".", null); return; }
+  imp.desfazendo = null;
+  const ids = g.desfazer.criados.map(c => c.id).concat(g.desfazer.alterados.map(a => a.id));
+  const atuais = new Map();
+  for (let i = 0; i < ids.length; i += 100) {
+    const foto = await colecaoLancamentos().where("id", "in", ids.slice(i, i + 100)).limit(1000).get();
+    for (const d of foto.docs) atuais.set(d.id, { id: d.id, ...d.data() });
+  }
+  const meses = new Set();
+  const apagar = [], voltar = [], mexidos = [];
+  for (const c of g.desfazer.criados) { const a = atuais.get(c.id); if (!a) continue; if (a.importacaoId !== id || assinaturaLanc(a) !== c.assinatura) { mexidos.push(a.descricao); continue; } apagar.push(a); meses.add(a.competencia); }
+  for (const c of g.desfazer.alterados) { const a = atuais.get(c.id); if (!a || a.importacaoId !== id || assinaturaLanc(a) !== c.assinatura) { mexidos.push((a || c.antes).descricao); continue; } voltar.push(c.antes); meses.add(a.competencia); meses.add(c.antes.competencia); }
+  const fechado = [...meses].find(m => mesFechado(m));
+  if (fechado) { mostrarAviso(avisoMesFechado(fechado), null); return; }
+  const ok = await gravarComSeguranca(async () => {
+    await substituirLancamentos(apagar, []);
+    await substituirLancamentos([], voltar);
+    await colecaoImportacoes().doc(id).set({ ...Object.fromEntries(Object.entries(g).filter(([k]) => k !== "id")), desfeitaEm: new Date().toISOString() });
+  }, "Não consegui desfazer a importação.");
+  if (!ok) return;
+  mostrarAviso("Importação desfeita" + (mexidos.length ? ". Ficaram como estão, porque foram mudados depois: " + mexidos.slice(0, 3).join(", ") + (mexidos.length > 3 ? "…" : "") : "") + ".", null);
+  await carregarImportacoes();
+  if (imp.resultado) await compararArquivo();
+}
+
+// Desenha o resultado com as ações e liga os controles
+function desenharImportacaoComAcoes() {
+  desenharImportacaoSoConferencia();
+  const r = imp.resultado; if (!r) { $("impGravar").hidden = true; return; }
+  for (const k of ["duvida", "novo", "diferente"]) {
+    const bloco = $("impResultado").querySelector(".imp-g.imp-" + k);
+    if (!bloco) continue;
+    const linhas = bloco.querySelectorAll(".imp-l");
+    r.grupos[k].forEach((x, i) => { if (linhas[i]) linhas[i].outerHTML = linhaImpAcao(k, x, i); });
+  }
+  $("impResultado").querySelector(".imp-aviso").textContent = "Nada é gravado sozinho: escolha o que fazer em cada linha e toque em Gravar.";
+  atualizarBotaoGravar();
+}
+
+function aoMudarAcaoImp(e) {
+  const caixa = e.target.closest("[data-chave]"); if (!caixa) return;
+  const chave = caixa.dataset.chave;
+  const esc = imp.escolhas[chave] || (imp.escolhas[chave] = { acao: "nada" });
+  imp.confirmar = null;
+  if (e.target.classList.contains("imp-sel")) { esc.acao = e.target.value; const aberto = [...$("impResultado").querySelectorAll("details")].map(d => d.open); desenharImportacaoComAcoes(); $("impResultado").querySelectorAll("details").forEach((d, i) => { if (aberto[i] !== undefined) d.open = aberto[i]; }); return; }
+  if (e.target.classList.contains("imp-desc")) esc.descricao = e.target.value;
+  if (e.target.classList.contains("imp-cat")) esc.categoriaId = e.target.value;
+  if (e.target.classList.contains("imp-forma")) esc.forma = e.target.value;
+  atualizarBotaoGravar();
+}
 
 // v40: selo e classe das previstas; com a data já passada, vira "Vencida"
 const ICONE_RELOGIO = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg>";
@@ -4263,7 +4513,7 @@ function calcularComprometido() {
 }
 
 /* ---------- Leitura completa do banco (backup e exportação) ---------- */
-const COLECOES_BACKUP = ["categorias", "cartoes", "contasFixas", "orcamentos", "geracoes", "config", "faturasPagas"];
+const COLECOES_BACKUP = ["categorias", "cartoes", "contasFixas", "orcamentos", "geracoes", "config", "faturasPagas", "importacoes"];
 
 async function lerTodosLancamentos() {
   const anoAtual = Number(competenciaDeHoje().slice(0, 4));
@@ -4760,6 +5010,10 @@ function ligarEventos() {
   $("impArquivo").addEventListener("change", e => { escolherArquivoImportacao(e.target.files[0]); });
   $("impComparar").addEventListener("click", compararArquivo);
   $("impExportar").addEventListener("click", exportarImportacao);
+  $("impResultado").addEventListener("change", aoMudarAcaoImp);
+  $("impResultado").addEventListener("input", e => { if (e.target.classList.contains("imp-desc")) aoMudarAcaoImp(e); });
+  $("impGravar").addEventListener("click", gravarImportacao);
+  $("impGravadas").addEventListener("click", e => { const b = e.target.closest("[data-desfazer]"); if (b) desfazerImportacao(b.dataset.desfazer); });
   $("fecharParc").addEventListener("click", fecharParcelasHoje);
   $("fundoParc").addEventListener("click", e => { if (e.target === $("fundoParc")) fecharParcelasHoje(); });
   $("listaPend").addEventListener("click", e => {
