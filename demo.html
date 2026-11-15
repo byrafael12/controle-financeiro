@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Iwr0gxmi5um+X/S5YUPTfEBwIMdDdicGj3jXSA1d1Ko='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-0nbsFZkO2LToCOTIWueTvkEGxiC4jytGJKhH1OT3Ec4='; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'none'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, DEMONSTRAÇÃO com dados fictícios (Versão 43). Não se conecta a nenhum banco: os dados ficam só neste aparelho. -->
+<!-- Controle Financeiro, DEMONSTRAÇÃO com dados fictícios (Versão 45). Não se conecta a nenhum banco: os dados ficam só neste aparelho. -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -441,7 +441,8 @@ main { padding-block: 16px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom
 .fixa-item { width: 100%; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto 12px; gap: 12px; align-items: center; padding: 10px 14px; border: 0; border-top: 1px solid var(--line); background: transparent; text-align: left; min-height: 64px; }
 .fixa-item:first-child { border-top: 0; }
 .fixa-item:hover { background: var(--surface-2); }
-.fixa-item.inativa { opacity: .6; }
+.fixa-item.inativa { color: var(--muted); } /* v44: sem transparência, para o texto pequeno ter contraste */
+.fixa-item.inativa .fixa-n, .fixa-item.inativa .fixa-v, .fixa-item.inativa .dia-caixa b { color: var(--muted); }
 .fixa-t { display: grid; min-width: 0; }
 .fixa-n { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fixa-t small { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -594,6 +595,50 @@ div.hb { cursor: default; }
 .item.fatura-pagar .lado { display: grid; justify-items: end; gap: 6px; }
 .item.fatura-pagar .paguei { min-height: 36px; padding: 0 16px; font-size: 14px; }
 .folha-pend .pend-grupo.fatura-pagar { color: var(--accent); }
+/* v44: parcelas do cartão hoje (roxo) e consumo do gás */
+:root { --roxo: #6a4bc4; --roxo-fundo: #f1edfb; --roxo-borda: #cfc3f1; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --roxo: #b8a4ff; --roxo-fundo: #241d3d; --roxo-borda: #4a3d7a; } }
+:root[data-theme="dark"] { --roxo: #b8a4ff; --roxo-fundo: #241d3d; --roxo-borda: #4a3d7a; }
+.parc-inicio { width: 100%; display: flex; align-items: center; gap: 10px; border: 1px solid var(--roxo-borda); background: var(--roxo-fundo); color: var(--fg); border-radius: 12px; padding: 10px 14px; min-height: 52px; text-align: left; font: inherit; cursor: pointer; margin-top: 8px; }
+.parc-inicio .qtd { background: var(--roxo); color: var(--surface); border-radius: 999px; min-width: 28px; height: 28px; display: grid; place-items: center; font-weight: 700; font-size: 13px; padding: 0 8px; }
+.parc-inicio > span:nth-child(2) { flex: 1; font-size: 14px; }
+.parc-inicio small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.parc-inicio .seta { color: var(--roxo); font-size: 18px; }
+.item.parc-hoje { position: relative; background: linear-gradient(90deg, var(--roxo-fundo), transparent 70%); cursor: default; }
+.item.parc-hoje::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--roxo); }
+.item.parc-hoje .cor { background: var(--roxo); border-radius: 50%; }
+.item.parc-hoje .valor { color: var(--roxo); }
+.folha-pend .pend-grupo.parc { color: var(--roxo); }
+.gas-tab { display: grid; }
+.gas-l { display: grid; grid-template-columns: 1.1fr .8fr .8fr 1.1fr .9fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.gas-l > span:not(:first-child) { text-align: right; }
+.gas-l.gas-cab { border-top: 0; font-size: 12px; color: var(--muted); font-weight: 600; }
+/* v45: importar (só conferência) */
+.folha-imp { max-width: 640px; }
+.folha-imp .campo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.folha-imp .duas .campo { display: grid; }
+.imp-aviso { background: var(--accent-soft); border-radius: 10px; padding: 8px 12px; font-size: 13px; margin: 12px 0 8px; }
+.imp-totais { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0 12px; }
+.imp-totais > div { display: grid; gap: 2px; background: var(--surface-2); border-radius: 10px; padding: 8px 10px; font-size: 12px; }
+.imp-totais b { font-size: 15px; }
+.imp-totais .ok b { color: var(--receita); }
+.imp-totais .dif b { color: var(--despesa); }
+.imp-g { border-top: 1px solid var(--line); padding: 4px 0; }
+.imp-g summary { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; font-size: 14px; padding: 10px 2px; cursor: pointer; list-style: none; }
+.imp-g summary::-webkit-details-marker { display: none; }
+.imp-g summary::before { content: "›"; display: inline-block; width: 14px; transition: transform .15s; }
+.imp-g[open] summary::before { transform: rotate(90deg); }
+.imp-g summary > span:first-child { flex: 1; }
+.imp-g .dica { margin: 0 2px 6px; }
+.imp-duvida summary { color: var(--despesa); }
+.imp-novo summary, .imp-diferente summary { color: var(--accent); }
+.imp-soNoApp summary { color: var(--roxo); }
+.imp-l { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 8px 2px; border-top: 1px solid var(--line); font-size: 14px; }
+.imp-d { color: var(--muted); font-size: 13px; padding-top: 1px; }
+.imp-t { display: grid; min-width: 0; }
+.imp-n { overflow-wrap: anywhere; }
+.imp-t small { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.imp-v { font-weight: 600; white-space: nowrap; }
 /* Demonstração: faixa fixa no topo, acima do cabeçalho */
 .faixa-demo { grid-column: 1 / -1; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 8; height: 28px; line-height: 28px;
   padding-inline: 12px; text-align: center; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -732,6 +777,7 @@ div.hb { cursor: default; }
         </div>
       </div>
       <button type="button" class="pend-inicio" id="pendInicio" hidden></button>
+      <button type="button" class="parc-inicio" id="parcInicio" hidden></button>
       <div class="grade-inicio">
         <div class="cartao heroi" id="heroi"></div>
         <div class="trio">
@@ -791,6 +837,10 @@ div.hb { cursor: default; }
           <div class="cartao-topo"><h2 id="anOrcTitulo">Orçado x realizado</h2><span class="mudo" id="anOrcMarca"></span></div>
           <div class="hbars" id="anOrcado"></div>
           <p class="dica" id="anOrcDica"></p>
+        </div>
+        <div class="cartao" id="cartaoGas" hidden>
+          <div class="cartao-topo"><h2>Consumo do gás</h2><span class="mudo">Supergasbras, últimos 12 meses</span></div>
+          <div class="gas-tab" id="anGas"></div>
         </div>
         <div class="cartao larga">
           <div class="cartao-topo"><h2>Comprometido nos próximos 6 meses</h2><span class="mudo" id="gFuturoTxt"></span></div>
@@ -911,6 +961,13 @@ div.hb { cursor: default; }
           <div class="lista-cat" id="listaOrcamento"></div>
           <p class="dica">Em branco, a categoria usa a média dos 6 meses anteriores ao mês escolhido, recalculada todo mês (o valor cinza no campo). Digite um valor só para fixar uma meta própria naquela categoria.</p>
         </div>
+        <div class="secao" id="secaoImportar">
+          <span class="rotulo">Importar fatura ou extrato</span>
+          <div class="cartao backup">
+            <p class="dica">Compara o arquivo com os lançamentos do app e mostra o que já está lançado, o que é novo e o que precisa da sua análise. Por enquanto só confere: não grava nada.</p>
+            <div class="linha"><button type="button" class="botao primario" id="botaoImportar">Importar arquivo</button></div>
+          </div>
+        </div>
         <div class="secao" id="secaoBackup">
           <span class="rotulo">Backup e exportação</span>
           <div class="cartao backup">
@@ -933,7 +990,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 43: lançamentos, categorias, análise, cartões, parcelas, contas fixas, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 45: lançamentos, categorias, análise, cartões, parcelas, contas fixas, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Demonstração: os dados são fictícios e ficam só neste aparelho; nada é enviado para a internet. "Restaurar demonstração", no topo de Ajustes, volta aos dados originais.</span>
           <span id="infoTotal" class="num"></span>
@@ -983,6 +1040,31 @@ div.hb { cursor: default; }
 </div>
 
 <!-- Formulário de lançamento (abre como folha) -->
+<div class="fundo" id="fundoImp" hidden>
+  <div class="folha folha-imp" role="dialog" aria-modal="true" aria-labelledby="tituloImp">
+    <div class="folha-topo"><h2 id="tituloImp">Importar fatura ou extrato</h2><button type="button" class="botao texto" id="fecharImp">Fechar</button></div>
+    <p class="dica">CSV do C6 (fatura), do BB ou do Santander (extrato), ou o CSV padrão que o Claude gera a partir do PDF. Só conferência: nada é gravado.</p>
+    <div class="campo"><label class="botao" for="impArquivo">Escolher arquivo</label><input type="file" id="impArquivo" accept=".csv,text/csv" hidden>
+      <span class="mudo" id="impTipo"></span></div>
+    <div class="duas" id="impFatura" hidden>
+      <div class="campo"><label for="impCartao">Cartão</label><select id="impCartao"></select></div>
+      <div class="campo"><label for="impMes">Mês da fatura</label><select id="impMes"></select></div>
+    </div>
+    <p class="erro" id="impErro" role="alert"></p>
+    <div class="acoes"><button type="button" class="botao primario" id="impComparar" disabled>Comparar com o app</button>
+      <button type="button" class="botao" id="impExportar" hidden>Baixar conferência (CSV)</button></div>
+    <div id="impResultado" hidden></div>
+  </div>
+</div>
+
+<div class="fundo" id="fundoParc" hidden>
+  <div class="folha folha-pend" role="dialog" aria-modal="true" aria-labelledby="tituloParc">
+    <div class="folha-topo"><h2 id="tituloParc">Parcelas do cartão hoje</h2><button type="button" class="botao texto" id="fecharParc">Fechar</button></div>
+    <p class="dica">Só para informar: estas parcelas caem hoje nos cartões e já estão nas faturas. Não precisam de confirmação.</p>
+    <div id="listaParc"></div>
+  </div>
+</div>
+
 <div class="fundo" id="fundoPend" hidden>
   <div class="folha folha-pend" role="dialog" aria-modal="true" aria-labelledby="tituloPend">
     <div class="folha-topo"><h2 id="tituloPend">Pendências</h2><button type="button" class="botao texto" id="fecharPend">Fechar</button></div>
@@ -2316,6 +2398,7 @@ function desenharInicio() {
   } else {
     $("pendInicio").hidden = true;
   }
+  desenharParcelasHoje();
   desenharBackupInfo();
 }
 
@@ -2337,6 +2420,7 @@ function despesasDoMesFiltradas(m) {
   return d;
 }
 function desenharAnalise() {
+  desenharConsumoGas();
   document.querySelectorAll("[data-visao]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.visao === "pessoal") === estado.pessoal)));
   document.querySelectorAll("[data-periodo]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.periodo === analise.periodo)));
   $("comKms").checked = estado.incluirKms;
@@ -2878,6 +2962,347 @@ async function sugerirObservacaoFixa(lanc) {
   $("dicaObs").hidden = false;
 }
 
+// v44: parcelas do cartão que caem hoje (pedido de o titular em 14/11/2026), só informativo, só no dia.
+// Compra lançada no app ou vinda da fatura guarda a data da compra em todas as parcelas: a parcela N cai no
+// mesmo dia, N-1 meses depois (19/10 em 3x: 19/10, 19/11, 19/12). Parcela da planilha antiga já tem a data de cada mês.
+function somarMesesData(data, n) {
+  const [a, m, d] = data.split("-").map(Number);
+  const t = a * 12 + (m - 1) + n, a2 = Math.floor(t / 12), m2 = (t % 12) + 1;
+  const ultimo = new Date(Date.UTC(a2, m2, 0)).getUTCDate();
+  return a2 + "-" + String(m2).padStart(2, "0") + "-" + String(Math.min(d, ultimo)).padStart(2, "0");
+}
+
+function diaDaParcela(l) {
+  return l.origem === "planilha" || ehParcelaImportada(l) ? l.data : somarMesesData(l.data, l.parcela.numero - 1);
+}
+
+// Usa os lançamentos que o aviso de faturas já lê (fatura do mês atual e do seguinte): nenhuma leitura a mais no banco
+function parcelasDeHoje() {
+  if (!estado.lancFaturas) return [];
+  const hoje = dataDeHoje();
+  return estado.lancFaturas.filter(l => l.tipo === "despesa" && l.status === "paga" && l.cartaoId && l.parcela && !l.pendenteEnvio && diaDaParcela(l) === hoje)
+    .sort((a, b) => b.valorCentavos - a.valorCentavos || a.descricao.localeCompare(b.descricao, "pt-BR"));
+}
+
+function desenharParcelasHoje() {
+  const lista = estado.mes === competenciaDeHoje() ? parcelasDeHoje() : [];
+  const total = lista.reduce((a, l) => a + l.valorCentavos, 0);
+  $("parcInicio").hidden = lista.length === 0;
+  if (lista.length) {
+    $("parcInicio").innerHTML = "<span class=\"qtd num\">" + lista.length + "</span><span><b>Parcelas do cartão hoje</b>: " + lista.length +
+      (lista.length === 1 ? " parcela · " : " parcelas · ") + formatarReais(total) +
+      "<small>Só para informar: já estão nas faturas, não precisam de confirmação</small></span><span class=\"seta\" aria-hidden=\"true\">›</span>";
+  }
+  $("tituloParc").textContent = "Parcelas do cartão hoje, " + formatarDataCurta(dataDeHoje()).slice(0, 5);
+  $("listaParc").innerHTML = lista.length ? "<div class=\"pend-grupo parc\"><span>Parcelas de hoje</span><span class=\"num\">" + lista.length + "</span></div><div class=\"itens\">" +
+    lista.map(l => "<div class=\"item parc-hoje\"><span class=\"cor\"></span><span class=\"texto\"><span class=\"desc\">" + escapar(l.descricao) + "</span><br><span class=\"meta\">" +
+      escapar(cartaoPorId(l.cartaoId)?.nome || "") + " · parcela " + l.parcela.numero + "/" + l.parcela.total + " · fatura " + rotuloMes(l.competencia) +
+      "</span></span><span class=\"lado\"><span class=\"valor num\">" + formatarReais(l.valorCentavos) + "</span></span></div>").join("") +
+    "</div><div class=\"pend-total\"><span>Total de hoje</span><b class=\"num\">" + formatarReais(total) + "</b></div>"
+    : "<p class=\"dica\">Nenhuma parcela de cartão cai hoje.</p>";
+}
+
+function abrirParcelasHoje() { desenharParcelasHoje(); $("fundoParc").hidden = false; $("fecharParc").focus(); }
+function fecharParcelasHoje() { $("fundoParc").hidden = true; }
+
+// v44 (IMP-005): consumo do gás por mês (m³, kg, valor e R$/kg), a partir dos campos da v42
+async function desenharConsumoGas() {
+  let docs;
+  try {
+    const foto = await colecaoLancamentos().where("contaFixaId", "==", ID_GAS).limit(1000).get();
+    docs = foto.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (erro) { return; }
+  const linhas = docs.filter(l => l.status === "paga" && (l.consumoM3 || l.faturadoKg))
+    .sort((a, b) => b.competencia.localeCompare(a.competencia)).slice(0, 12);
+  $("cartaoGas").hidden = linhas.length === 0;
+  if (!linhas.length) return;
+  $("anGas").innerHTML = "<div class=\"gas-l gas-cab\"><span>Mês</span><span>m³</span><span>kg</span><span>Valor</span><span>R$/kg</span></div>" +
+    linhas.map(l => "<div class=\"gas-l\"><span>" + escapar(rotuloMes(l.competencia)) + "</span><span class=\"num\">" + (l.consumoM3 ? numeroBR(l.consumoM3) : "-") +
+      "</span><span class=\"num\">" + (l.faturadoKg ? numeroBR(l.faturadoKg) : "-") + "</span><span class=\"num\">" + formatarReais(l.valorCentavos) +
+      "</span><span class=\"num\">" + (l.faturadoKg ? formatarReais(Math.round(l.valorCentavos / l.faturadoKg)) : "-") + "</span></div>").join("");
+}
+
+// v44 (IMP-008): lançamento novo igual a outro (mesmo tipo, data, valor e descrição) pede confirmação antes de salvar.
+// Confere só o que o app já tem carregado (lançamentos do mês aberto e da janela de meses): não lê o banco, funciona sem internet.
+function acharDuplicado(tipo, data, centavos, descricao) {
+  const desc = descricao.trim().toLowerCase();
+  const vistos = new Map();
+  for (const l of (estado.lancPorData || []).concat(estado.lancamentos || [], estado.lancFaturas || [])) if (l.data === data) vistos.set(l.id, l);
+  return [...vistos.values()].find(l => l.tipo === tipo && (l.descricao || "").trim().toLowerCase() === desc &&
+    (l.parcela && !ehParcelaImportada(l) ? l.parcela.valorTotalCentavos : l.valorCentavos) === centavos) || null;
+}
+
+// v45: Importar fatura ou extrato (só leitura). Compara o arquivo com os lançamentos do app e mostra os grupos.
+// NÃO grava nada. Regras de o titular (14/11/2026): sem tolerância (só valor e data exatos casam; o resto vai para
+// Dúvida), Pix entre contas e cartões de dependentes ignorados, tela em Ajustes.
+const IMP_TITULAR = /^RAFAEL\b/i;
+const IMP_ARREDONDAMENTO = 10; // centavos: diferença aceita só em parcela de cartão (arredondamento do banco)
+const IMP_PIX_ENTRE_CONTAS = /\b(rafael de frei|raphaela|paola)/i;
+const IMP_CARTAO_PELO_ARQUIVO = [[/^c6/i, "cartao-c6-bank"], [/^bb/i, "cartao-bb-visa"], [/^santander/i, "cartao-santander"],
+  [/^mercado ?pago/i, "cartao-mercado-pago"], [/^revolut/i, "cartao-revolut"], [/^meliuz/i, "cartao-meliuz"], [/^atacad/i, "cartao-atacadao"]];
+const imp = { arquivo: null, texto: "", tipo: null, itens: [], resultado: null };
+
+// Lê o arquivo como UTF-8; se não for UTF-8 válido (extrato do BB), lê como Windows-1252
+async function lerTextoImportacao(arquivo) {
+  const bytes = await arquivo.arrayBuffer();
+  try { return new TextDecoder("utf-8", { fatal: true }).decode(bytes).replace(/^﻿/, ""); }
+  catch (e) { return new TextDecoder("windows-1252").decode(bytes); }
+}
+
+// Separa linhas e colunas de CSV com ";" ou ",", respeitando aspas (inclusive quebra de linha dentro das aspas)
+function partirCsv(texto, sep) {
+  const linhas = []; let linha = [], campo = "", aspas = false;
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i];
+    if (aspas) {
+      if (c === "\"" && texto[i + 1] === "\"") { campo += "\""; i++; }
+      else if (c === "\"") aspas = false;
+      else campo += c;
+    } else if (c === "\"") aspas = true;
+    else if (c === sep) { linha.push(campo); campo = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && texto[i + 1] === "\n") i++;
+      linha.push(campo); linhas.push(linha); linha = []; campo = "";
+    } else campo += c;
+  }
+  if (campo || linha.length) { linha.push(campo); linhas.push(linha); }
+  return linhas.filter(l => l.some(c => c.trim()));
+}
+
+function dataBr(t) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(t).trim());
+  if (m) return m[3] + "-" + m[2] + "-" + m[1];
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(t).trim());
+  return iso ? iso[0] : null;
+}
+
+// "1.234,56", "-79,45", "37.47", "-628.13" -> centavos (com sinal)
+function valorArquivo(t) {
+  let s = String(t).trim().replace(/\s|R\$/g, "");
+  if (!s) return null;
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  if (!/^-?\d+(\.\d{1,2})?$/.test(s)) return null;
+  return Math.round(Number(s) * 100);
+}
+
+function normalizarDesc(t) { return String(t || "").replace(/\s+/g, " ").trim(); }
+
+// Reconhece o arquivo pelo cabeçalho e devolve { tipo, nome, itens }
+function lerArquivoImportacao(texto) {
+  const inicio = texto.slice(0, 400).toLowerCase();
+  // Fatura C6 (CSV do próprio banco)
+  if (inicio.startsWith("data de compra;nome no cart")) {
+    const linhas = partirCsv(texto, ";").slice(1);
+    return { tipo: "fatura", nome: "Fatura C6 Bank (CSV do banco)", itens: linhas.map((c, i) => {
+      const parc = /^(\d+)\/(\d+)$/.exec(String(c[5] || "").trim());
+      return { linha: i + 2, data: dataBr(c[0]), descricao: normalizarDesc(c[4]), valor: valorArquivo(c[8]), nomeCartao: normalizarDesc(c[1]),
+        parcela: parc ? { n: Number(parc[1]), t: Number(parc[2]) } : null };
+    }) };
+  }
+  // Extrato BB (CSV do banco)
+  if (inicio.startsWith("\"data\",\"lan")) {
+    const linhas = partirCsv(texto, ",").slice(1);
+    return { tipo: "extrato", nome: "Extrato Banco do Brasil (CSV do banco)", itens: linhas.map((c, i) => {
+      let data = dataBr(c[0]);
+      // Pix e saque trazem a data real nos detalhes ("10/10 16:04 ..."); o extrato registra no dia útil seguinte
+      const real = /^(\d{2})\/(\d{2}) \d{2}:\d{2}\b/.exec(String(c[2] || ""));
+      if (data && real) { let ano = Number(data.slice(0, 4)); if (Number(real[2]) > Number(data.slice(5, 7))) ano--; data = ano + "-" + real[2] + "-" + real[1]; }
+      return { linha: i + 2, data, descricao: normalizarDesc(c[1] + (c[2] ? " · " + c[2] : "")), valor: valorArquivo(c[4]), lancamentoBanco: normalizarDesc(c[1]) };
+    }) };
+  }
+  // Extrato Santander (CSV do banco)
+  if (inicio.includes("extrato de conta corrente")) {
+    const linhas = partirCsv(texto, ";");
+    const i0 = linhas.findIndex(l => /^data$/i.test(String(l[0]).trim()) && /descri/i.test(String(l[1])));
+    return { tipo: "extrato", nome: "Extrato Santander (CSV do banco)", itens: linhas.slice(i0 + 1).map((c, i) => ({
+      linha: i0 + i + 2, data: dataBr(c[0]), descricao: normalizarDesc(c[1]), valor: valorArquivo(c[2]), lancamentoBanco: normalizarDesc(String(c[1]).split(/\n/)[0]) })) };
+  }
+  // CSV padrão (gerado pelo Claude a partir do PDF ou da imagem)
+  const primeira = partirCsv(texto.split(/\r?\n/)[0] || "", ";")[0] || [];
+  const cab = primeira.map(c => c.trim().toLowerCase());
+  if (cab[0] === "data" && cab[1] === "descricao" && cab[2] === "valor") {
+    const linhas = partirCsv(texto, ";").slice(1);
+    const fatura = cab.includes("parcela");
+    const iP = cab.indexOf("parcela"), iN = cab.indexOf("nome_cartao");
+    return { tipo: fatura ? "fatura" : "extrato", nome: fatura ? "Fatura (CSV padrão)" : "Extrato (CSV padrão)", itens: linhas.map((c, i) => {
+      const parc = iP >= 0 ? /^(\d+)\/(\d+)$/.exec(String(c[iP] || "").trim()) : null;
+      return { linha: i + 2, data: dataBr(c[0]), descricao: normalizarDesc(c[1]), valor: valorArquivo(c[2]),
+        parcela: parc ? { n: Number(parc[1]), t: Number(parc[2]) } : null, nomeCartao: iN >= 0 ? normalizarDesc(c[iN]) : "" };
+    }) };
+  }
+  return null;
+}
+
+// Data da compra de um lançamento do app (parcela da planilha antiga guarda a data de cada mês)
+function dataDaCompra(l) {
+  return l.parcela && (l.origem === "planilha" || ehParcelaImportada(l)) ? somarMesesData(l.data, -(l.parcela.numero - 1)) : l.data;
+}
+
+function mesmaParcela(item, l) {
+  if (!item.parcela && !l.parcela) return true;
+  if (!item.parcela || !l.parcela) return false;
+  return item.parcela.n === l.parcela.numero && item.parcela.t === l.parcela.total;
+}
+
+// Compara o arquivo com o app. Devolve os grupos; nada é gravado.
+function compararImportacao(lido, todos, cartaoId, mesFatura) {
+  const g = { ignorado: [], lancado: [], diferente: [], duvida: [], novo: [], soNoApp: [] };
+  const usados = new Set();
+  const ehFatura = lido.tipo === "fatura";
+  const doCartao = ehFatura ? todos.filter(l => l.tipo === "despesa" && l.cartaoId === cartaoId && l.competencia === mesFatura) : [];
+  const fora = todos.filter(l => !ehFatura ? l.formaPagamento !== "credito" : true);
+  const itens = [];
+  for (const it of lido.itens) {
+    if (!it.data || it.valor === null) { if (it.descricao || it.valor !== null) g.duvida.push({ it, motivo: "linha " + it.linha + " sem data ou valor reconhecível" }); continue; }
+    if (ehFatura) {
+      if (/^inclus[aã]o de pagamento|^pagamento (recebido|da fatura|efetuado)|^pgto/i.test(it.descricao) && it.valor < 0) { g.ignorado.push({ it, motivo: "pagamento da fatura" }); continue; }
+      if (it.nomeCartao && !IMP_TITULAR.test(it.nomeCartao)) { g.ignorado.push({ it, motivo: "cartão de dependente (" + it.nomeCartao + ")" }); continue; }
+    } else if (/^saldo|^s a l d o/i.test(it.descricao) || it.valor === 0) { g.ignorado.push({ it, motivo: "linha de saldo" }); continue; }
+    else if (/rende f[aá]cil/i.test(it.descricao)) { g.ignorado.push({ it, motivo: "aplicação automática (Rende Fácil)" }); continue; }
+    itens.push(it);
+  }
+  // 1) Já lançado: valor e data exatos (fatura: mesmo cartão e mês da fatura, mesma parcela)
+  const pendentes = [];
+  for (const it of itens) {
+    const base = ehFatura ? doCartao : fora.filter(l => l.tipo === (it.valor < 0 ? "despesa" : "receita"));
+    const valor = Math.abs(it.valor);
+    const l = (ehFatura && it.valor < 0) ? null : base.find(x => !usados.has(x.id) && x.valorCentavos === valor && (ehFatura ? dataDaCompra(x) === it.data && mesmaParcela(it, x) : x.data === it.data));
+    if (l) { usados.add(l.id); g.lancado.push({ it, l }); } else pendentes.push(it);
+  }
+  // 1b) Parcela com diferença de arredondamento (decisão de o titular em 15/11/2026): mesma compra (data e parcela),
+  //     diferença de até R$ 0,10 no valor da parcela conta como já lançada, com aviso do valor no app
+  if (ehFatura) for (const it of pendentes.splice(0)) {
+    const valor = Math.abs(it.valor);
+    const l = it.parcela && it.valor > 0 ? doCartao.find(x => !usados.has(x.id) && x.parcela && Math.abs(x.valorCentavos - valor) <= IMP_ARREDONDAMENTO && dataDaCompra(x) === it.data && mesmaParcela(it, x)) : null;
+    if (l) { usados.add(l.id); g.lancado.push({ it, l, motivo: "arredondamento da parcela: no app " + formatarReais(l.valorCentavos) }); } else pendentes.push(it);
+  }
+  // Pix entre contas sem lançamento igual no app: ignorado
+  const restantes = [];
+  for (const it of pendentes) {
+    if (!ehFatura && /^pix/i.test(it.lancamentoBanco || it.descricao) && IMP_PIX_ENTRE_CONTAS.test(it.descricao)) g.ignorado.push({ it, motivo: "Pix entre contas" });
+    else if (!ehFatura && it.valor < 0 && /pagamento (de )?cart[aã]o|pagto cart[aã]o|pgto cart[aã]o|pagamento (de )?fatura/i.test(it.descricao)) g.ignorado.push({ it, motivo: "pagamento de fatura de cartão (as compras já estão no app)" });
+    else restantes.push(it);
+  }
+  for (const it of restantes) {
+    const valor = Math.abs(it.valor);
+    if (ehFatura && it.valor < 0) { g.duvida.push({ it, motivo: "crédito ou estorno na fatura" }); continue; }
+    // 2) Diferente (só fatura): mesma compra (data, valor e parcela) lançada em outro cartão, sem cartão ou em outra fatura
+    if (ehFatura) {
+      const l = todos.find(x => !usados.has(x.id) && x.tipo === "despesa" && x.formaPagamento === "credito" && x.valorCentavos === valor && dataDaCompra(x) === it.data && mesmaParcela(it, x));
+      if (l) {
+        usados.add(l.id);
+        g.diferente.push({ it, l, motivo: "no app: " + (cartaoPorId(l.cartaoId)?.nome || "crédito sem cartão") + ", fatura " + rotuloMes(l.competencia) });
+        continue;
+      }
+    }
+    // 3) Dúvida: mesma data ou mesmo valor, mas não os dois (sem tolerância: o titular decide)
+    const base = ehFatura ? doCartao : fora.filter(x => x.tipo === (it.valor < 0 ? "despesa" : "receita"));
+    const quase = base.filter(x => !usados.has(x.id)).find(x => (ehFatura ? dataDaCompra(x) : x.data) === it.data || x.valorCentavos === valor);
+    if (quase) {
+      const dQ = ehFatura ? dataDaCompra(quase) : quase.data;
+      g.duvida.push({ it, l: quase, motivo: dQ === it.data ? "mesma data, valor diferente no app: " + formatarReais(quase.valorCentavos) + " (" + quase.descricao + ")"
+        : "mesmo valor, data diferente no app: " + formatarDataCurta(dQ).slice(0, 5) + " (" + quase.descricao + ")" });
+    } else g.novo.push({ it });
+  }
+  // Fatura: o que está no app neste cartão e mês e não apareceu no arquivo
+  if (ehFatura) for (const l of doCartao) if (!usados.has(l.id)) g.soNoApp.push({ l });
+  const somaArquivo = ehFatura ? lido.itens.filter(it => it.data && it.valor !== null && !g.ignorado.some(x => x.it === it)).reduce((a, it) => a + it.valor, 0) : null;
+  const somaApp = ehFatura ? doCartao.reduce((a, l) => a + l.valorCentavos, 0) : null;
+  return { grupos: g, somaArquivo, somaApp };
+}
+
+const IMP_GRUPOS = [
+  ["duvida", "Dúvida", "Para você analisar: data ou valor não batem exatamente"],
+  ["novo", "Novo", "No arquivo e não no app"],
+  ["diferente", "Diferente", "Mesma compra, mas em outro cartão ou outra fatura no app"],
+  ["soNoApp", "Só no app", "No app nesta fatura e não no arquivo"],
+  ["lancado", "Já lançado", "Data e valor exatos (parcela: aceita até R$ 0,10 de arredondamento)"],
+  ["ignorado", "Ignorado", "Pagamento de fatura, saldo, aplicação automática, Pix entre contas ou cartão de dependente"]
+];
+
+function linhaImp(x) {
+  const it = x.it, l = x.l;
+  const data = it ? formatarDataCurta(it.data || "").slice(0, 5) : formatarDataCurta(dataDaCompra(l)).slice(0, 5);
+  const desc = it ? it.descricao : l.descricao;
+  const valor = it ? it.valor : l.valorCentavos;
+  const parc = it && it.parcela ? " · parcela " + it.parcela.n + "/" + it.parcela.t : (!it && l.parcela ? " · parcela " + l.parcela.numero + "/" + l.parcela.total : "");
+  const sub = x.motivo || (it && l ? "no app: " + l.descricao : "");
+  return "<div class=\"imp-l\"><span class=\"imp-d num\">" + escapar(data) + "</span><span class=\"imp-t\"><span class=\"imp-n\">" + escapar(desc) + "</span>" +
+    (parc || sub ? "<small>" + escapar((parc ? parc.slice(3) : "") + (parc && sub ? " · " : "") + sub) + "</small>" : "") + "</span><span class=\"imp-v num\">" +
+    (valor < 0 ? "-" : "") + formatarReais(Math.abs(valor)) + "</span></div>";
+}
+
+function desenharImportacao() {
+  const r = imp.resultado; if (!r) { $("impResultado").hidden = true; return; }
+  const g = r.grupos;
+  let h = "<p class=\"imp-aviso\">Só conferência: nada foi gravado no app.</p>";
+  if (r.somaArquivo !== null) {
+    const dif = r.somaArquivo - r.somaApp;
+    h += "<div class=\"imp-totais\"><div><span class=\"mudo\">Arquivo</span><b class=\"num\">" + formatarReais(r.somaArquivo) + "</b></div><div><span class=\"mudo\">No app</span><b class=\"num\">" +
+      formatarReais(r.somaApp) + "</b></div><div class=\"" + (dif === 0 ? "ok" : "dif") + "\"><span class=\"mudo\">Diferença</span><b class=\"num\">" + (dif === 0 ? "nenhuma" : (dif < 0 ? "-" : "") + formatarReais(Math.abs(dif))) + "</b></div></div>";
+  }
+  for (const [k, nome, dica] of IMP_GRUPOS) {
+    const lista = g[k]; if (!lista.length) continue;
+    h += "<details class=\"imp-g imp-" + k + "\"" + (k === "duvida" || k === "novo" || k === "diferente" || k === "soNoApp" ? " open" : "") + "><summary><span>" + nome + "</span><span class=\"num\">" + lista.length + "</span></summary>" +
+      "<p class=\"dica\">" + dica + "</p>" + lista.map(linhaImp).join("") + "</details>";
+  }
+  $("impResultado").innerHTML = h;
+  $("impResultado").hidden = false;
+  $("impExportar").hidden = false;
+}
+
+async function escolherArquivoImportacao(arquivo) {
+  imp.resultado = null; desenharImportacao(); $("impExportar").hidden = true; $("impErro").textContent = "";
+  if (!arquivo) return;
+  imp.arquivo = arquivo;
+  imp.texto = await lerTextoImportacao(arquivo);
+  imp.lido = lerArquivoImportacao(imp.texto);
+  if (!imp.lido) { $("impTipo").textContent = ""; $("impErro").textContent = "Não reconheci este arquivo. Use o CSV do C6, do BB ou do Santander, ou o CSV padrão que o Claude gera a partir do PDF."; $("impFatura").hidden = true; $("impComparar").disabled = true; return; }
+  $("impTipo").textContent = imp.lido.nome + " · " + imp.lido.itens.length + " linhas";
+  $("impFatura").hidden = imp.lido.tipo !== "fatura";
+  if (imp.lido.tipo === "fatura") {
+    const nome = arquivo.name || "";
+    const cart = IMP_CARTAO_PELO_ARQUIVO.find(([re]) => re.test(nome));
+    $("impCartao").innerHTML = estado.cartoes.filter(c => c.ativo || (cart && c.id === cart[1])).map(c => "<option value=\"" + escapar(c.id) + "\">" + escapar(c.nome) + "</option>").join("");
+    if (cart) $("impCartao").value = cart[1];
+    const m = /(\d{4})-(\d{2})/.exec(nome);
+    const meses = []; for (let i = -6; i <= 2; i++) meses.push(somarMeses(competenciaDeHoje(), i));
+    $("impMes").innerHTML = meses.reverse().map(c => "<option value=\"" + c + "\">" + rotuloMes(c) + "</option>").join("");
+    $("impMes").value = m && meses.includes(m[1] + "-" + m[2]) ? m[1] + "-" + m[2] : competenciaDeHoje();
+  }
+  $("impComparar").disabled = false;
+}
+
+async function compararArquivo() {
+  if (!imp.lido) return;
+  const botao = $("impComparar"); botao.disabled = true; $("impErro").textContent = "";
+  try {
+    const foto = await colecaoLancamentos().limit(100000).get();
+    const todos = foto.docs.map(d => ({ id: d.id, ...d.data() }));
+    imp.resultado = compararImportacao(imp.lido, todos, $("impCartao").value, $("impMes").value);
+    desenharImportacao();
+  } catch (erro) {
+    console.error(erro);
+    $("impErro").textContent = "Não consegui ler os lançamentos do app. Confira a internet e tente de novo.";
+  } finally { botao.disabled = false; }
+}
+
+function exportarImportacao() {
+  const r = imp.resultado; if (!r) return;
+  const linhas = [linhaCsv(["Grupo", "Data", "Descrição no arquivo", "Valor (R$)", "Parcela", "No app", "Observação"])];
+  for (const [k, nome] of IMP_GRUPOS) for (const x of r.grupos[k]) {
+    const it = x.it, l = x.l;
+    const v = it ? it.valor : l.valorCentavos;
+    linhas.push(linhaCsv([nome, it ? it.data : dataDaCompra(l), it ? it.descricao : "", (v < 0 ? "-" : "") + centavosParaTexto(Math.abs(v)),
+      it && it.parcela ? it.parcela.n + "/" + it.parcela.t : (l && l.parcela ? l.parcela.numero + "/" + l.parcela.total : ""), l ? l.descricao + " (" + l.id + ")" : "", x.motivo || ""]));
+  }
+  const base = (imp.arquivo && imp.arquivo.name || "importacao").replace(/\.[^.]+$/, "");
+  baixarArquivo("conferencia " + base + ".csv", "﻿" + linhas.join("\r\n"));
+}
+
+function abrirImportacao() { $("fundoImp").hidden = false; }
+function fecharImportacao() { $("fundoImp").hidden = true; }
+
 // v40: selo e classe das previstas; com a data já passada, vira "Vencida"
 const ICONE_RELOGIO = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg>";
 const ICONE_ALERTA = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" aria-hidden=\"true\"><path d=\"M12 8v5M12 16.5v.5\"/><circle cx=\"12\" cy=\"12\" r=\"9\"/></svg>";
@@ -3024,7 +3449,8 @@ async function abrirForm(lanc) {
     const fechada = form.grupo.find(p => mesFechado(p.competencia));
     if (fechada) { form.grupo = []; form.editando = null; mostrarAviso("Compra parcelada com parcela em mês fechado (" + rotuloMes(fechada.competencia) + "): fica só para consulta. Para corrigir, peça ao Claude.", null); return; }
   }
-  form.dataConfirmada = lanc ? lanc.data : null; // ao editar, a data que já estava salva não pede confirmação
+  form.dataConfirmada = lanc ? lanc.data : null;
+  form.duplicadoOk = null; // ao editar, a data que já estava salva não pede confirmação
   $("salvarLanc").textContent = "Salvar";
   $("erroForm").textContent = "";
   $("tituloForm").textContent = !lanc ? "Novo lançamento" : lanc.parcela && !ehParcelaImportada(lanc) ? "Editar compra parcelada" : "Editar lançamento";
@@ -3143,6 +3569,20 @@ async function salvarForm(evento) {
     return;
   }
 
+  // v44 (IMP-008): lançamento novo igual a outro já salvo pede um segundo toque em Salvar
+  if (!form.editando) {
+    const chaveDup = [form.tipo, data, centavos, descricao.trim().toLowerCase()].join("|");
+    if (form.duplicadoOk !== chaveDup) {
+      const igual = acharDuplicado(form.tipo, data, centavos, descricao);
+      if (igual) {
+        form.duplicadoOk = chaveDup;
+        $("erroForm").textContent = "Já existe um lançamento igual em " + formatarDataCurta(data).slice(0, 5) + ": " + igual.descricao + ", " +
+          formatarReais(centavos) + ". Se for outro gasto mesmo, toque em Salvar de novo.";
+        $("salvarLanc").textContent = "Salvar mesmo assim";
+        return;
+      }
+    }
+  }
   const agora = new Date().toISOString();
   const anterior = form.editando;
   const antigos = anterior ? (form.grupo.length ? form.grupo : [anterior]) : [];
@@ -3671,126 +4111,11 @@ function mudarMes(competencia) {
 }
 
 /* =====================================================================
-   5. GRÁFICOS (Chart.js)
+   5. CORES DOS GRÁFICOS (desenhados em SVG pelo próprio app)
    ===================================================================== */
-const graficos = { meses: null, categorias: null, futuro: null };
 
 function cor(token) {
   return getComputedStyle(document.documentElement).getPropertyValue(token).trim();
-}
-
-function semChart(idCanvas) {
-  const canvas = $(idCanvas);
-  if (window.Chart) return false;
-  canvas.parentElement.innerHTML = "<div class=\"aviso-grafico\">O gráfico não carregou. Verifique a internet e recarregue a página.</div>";
-  return true;
-}
-
-function opcoesBase() {
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? false : { duration: 350 },
-    plugins: {
-      legend: { labels: { color: cor("--muted"), boxWidth: 12, boxHeight: 12, font: { size: 13 } } },
-      tooltip: { callbacks: { label: ctx => " " + (ctx.dataset.label ? ctx.dataset.label + ": " : ctx.label + ": ") + formatarReais(ctx.raw) } }
-    }
-  };
-}
-
-function desenharGraficoMeses() {
-  if (semChart("gMeses")) return;
-  const meses = [];
-  for (let i = 11; i >= 0; i--) meses.push(somarMeses(estado.mes, -i));
-  const receitas = [];
-  const despesas = [];
-  for (const m of meses) {
-    const t = totais(estado.lancamentos.filter(l => l.competencia === m), { incluirKms: estado.incluirKms, pessoal: estado.pessoal });
-    receitas.push(t.receitas);
-    despesas.push(t.despesas);
-  }
-  const rotulos = meses.map(m => nomeMesBarra.format(new Date(m + "-01T00:00:00Z")).replace(".", "") + "/" + m.slice(2, 4));
-  const base = opcoesBase();
-  const config = {
-    type: "bar",
-    data: {
-      labels: rotulos,
-      datasets: [
-        { label: "Receitas", data: receitas, backgroundColor: cor("--receita"), borderRadius: 4, maxBarThickness: 18 },
-        { label: "Despesas", data: despesas, backgroundColor: cor("--despesa"), borderRadius: 4, maxBarThickness: 18 }
-      ]
-    },
-    options: {
-      ...base,
-      scales: {
-        x: { ticks: { color: cor("--muted"), font: { size: 12 } }, grid: { display: false } },
-        y: {
-          ticks: { color: cor("--muted"), font: { size: 12 }, callback: v => "R$ " + (v / 100000).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mil" },
-          grid: { color: cor("--line") }, border: { display: false }
-        }
-      }
-    }
-  };
-  if (graficos.meses) graficos.meses.destroy();
-  graficos.meses = new Chart($("gMeses"), config);
-}
-
-function desenharGraficoCategorias(doMes) {
-  if (semChart("gCategorias")) return;
-  const soma = new Map();
-  for (const l of doMes) {
-    if (l.tipo !== "despesa") continue;
-    const valor = valorDespesa(l, estado.pessoal);
-    if (valor > 0) soma.set(l.categoriaId, (soma.get(l.categoriaId) || 0) + valor);
-  }
-  let linhas = [...soma.entries()].map(([id, v]) => ({ cat: categoriaPorId(id), valor: v })).sort((a, b) => b.valor - a.valor);
-  const formato = estado.formatoCategorias;
-  document.querySelectorAll("[data-formato]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.formato === formato)));
-  if (graficos.categorias) { graficos.categorias.destroy(); graficos.categorias = null; }
-  const canvas = $("gCategorias");
-  const area = canvas.parentElement;
-  area.querySelectorAll(".aviso-grafico").forEach(n => n.remove());
-  if (linhas.length === 0) {
-    canvas.hidden = true;
-    area.insertAdjacentHTML("beforeend", "<div class=\"aviso-grafico\">Nenhuma despesa neste mês ainda.</div>");
-    return;
-  }
-  canvas.hidden = false;
-  // Rosca: 6 maiores + "Outras", para ficar legível
-  if (formato === "rosca" && linhas.length > 7) {
-    const resto = linhas.slice(6).reduce((a, b) => a + b.valor, 0);
-    linhas = linhas.slice(0, 6).concat([{ cat: { id: "", nome: "Outras", cor: cor("--previsto") }, valor: resto }]);
-  }
-  const base = opcoesBase();
-  const dados = {
-    labels: linhas.map(l => l.cat.nome),
-    datasets: [{ data: linhas.map(l => l.valor), backgroundColor: linhas.map(l => l.cat.cor), borderColor: cor("--surface"), borderWidth: formato === "rosca" ? 2 : 0, borderRadius: formato === "rosca" ? 0 : 4, maxBarThickness: 22 }]
-  };
-  const aoTocar = (_evento, elementos) => {
-    if (!elementos.length) return;
-    const linha = linhas[elementos[0].index];
-    if (!linha.cat.id) return;
-    estado.filtroTipo = "despesa";
-    estado.filtroSituacao = "todas";
-    estado.filtroCategoria = linha.cat.id;
-    estado.busca = "";
-    $("busca").value = "";
-    irPara("lancamentos");
-  };
-  const config = formato === "rosca"
-    ? { type: "doughnut", data: dados, options: { ...base, cutout: "62%", onClick: aoTocar, plugins: { ...base.plugins, legend: { position: "bottom", labels: base.plugins.legend.labels } } } }
-    : {
-      type: "bar", data: dados,
-      options: {
-        ...base, indexAxis: "y", onClick: aoTocar,
-        plugins: { ...base.plugins, legend: { display: false } },
-        scales: {
-          x: { ticks: { color: cor("--muted"), font: { size: 12 }, callback: v => "R$ " + (v / 100).toLocaleString("pt-BR") }, grid: { color: cor("--line") }, border: { display: false } },
-          y: { ticks: { color: cor("--fg"), font: { size: 13 } }, grid: { display: false } }
-        }
-      }
-    };
-  graficos.categorias = new Chart(canvas, config);
 }
 
 /* =====================================================================
@@ -3935,37 +4260,6 @@ function calcularComprometido() {
     }
   }
   return { meses, porMes };
-}
-
-function desenharGraficoFuturo() {
-  if (semChart("gFuturo")) return;
-  const { meses, porMes } = calcularComprometido();
-  const rotulos = meses.map(m => nomeMesBarra.format(new Date(m + "-01T00:00:00Z")).replace(".", "") + "/" + m.slice(2, 4));
-  const base = opcoesBase();
-  const config = {
-    type: "bar",
-    data: {
-      labels: rotulos,
-      datasets: [
-        { label: "Parcelas", data: meses.map(m => porMes[m].parcelas), backgroundColor: cor("--despesa"), borderRadius: 3, maxBarThickness: 28 },
-        { label: "Contas fixas", data: meses.map(m => porMes[m].fixas), backgroundColor: cor("--previsto"), borderRadius: 3, maxBarThickness: 28 },
-        { label: "Outras já lançadas", data: meses.map(m => porMes[m].outras), backgroundColor: cor("--accent"), borderRadius: 3, maxBarThickness: 28 }
-      ]
-    },
-    options: {
-      ...base,
-      plugins: {
-        ...base.plugins,
-        tooltip: { callbacks: { label: ctx => " " + ctx.dataset.label + ": " + formatarReais(ctx.raw), footer: itens => "Total: " + formatarReais(itens.reduce((a, i) => a + i.raw, 0)) } }
-      },
-      scales: {
-        x: { stacked: true, ticks: { color: cor("--muted"), font: { size: 12 } }, grid: { display: false } },
-        y: { stacked: true, ticks: { color: cor("--muted"), font: { size: 12 }, callback: v => "R$ " + (v / 100000).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mil" }, grid: { color: cor("--line") }, border: { display: false } }
-      }
-    }
-  };
-  if (graficos.futuro) graficos.futuro.destroy();
-  graficos.futuro = new Chart($("gFuturo"), config);
 }
 
 /* ---------- Leitura completa do banco (backup e exportação) ---------- */
@@ -4459,6 +4753,15 @@ function ligarEventos() {
   $("pendInicio").addEventListener("click", abrirPendencias); // v40: abre a folha só com as pendências
   $("fecharPend").addEventListener("click", fecharPendencias);
   $("fundoPend").addEventListener("click", e => { if (e.target === $("fundoPend")) fecharPendencias(); });
+  $("parcInicio").addEventListener("click", abrirParcelasHoje);
+  $("botaoImportar").addEventListener("click", abrirImportacao);
+  $("fecharImp").addEventListener("click", fecharImportacao);
+  $("fundoImp").addEventListener("click", e => { if (e.target === $("fundoImp")) fecharImportacao(); });
+  $("impArquivo").addEventListener("change", e => { escolherArquivoImportacao(e.target.files[0]); });
+  $("impComparar").addEventListener("click", compararArquivo);
+  $("impExportar").addEventListener("click", exportarImportacao);
+  $("fecharParc").addEventListener("click", fecharParcelasHoje);
+  $("fundoParc").addEventListener("click", e => { if (e.target === $("fundoParc")) fecharParcelasHoje(); });
   $("listaPend").addEventListener("click", e => {
     const paguei = e.target.closest("[data-paguei]");
     if (paguei) { paguei.disabled = true; marcarFaturaPaga(paguei.dataset.paguei).finally(() => { paguei.disabled = false; }); return; }
@@ -4550,6 +4853,8 @@ function ligarEventos() {
   document.addEventListener("keydown", e => {
     if (e.key !== "Escape") return;
     if (!$("fundoConfirma").hidden) $("fundoConfirma").hidden = true;
+    else if (!$("fundoParc").hidden) fecharParcelasHoje();
+    else if (!$("fundoImp").hidden) fecharImportacao();
     else if (!$("fundoForm").hidden) fecharForm();
   });
 
@@ -4590,11 +4895,6 @@ function ligarEventos() {
   for (const idKms of ["comKms", "comKmsAnalise"]) {
     $(idKms).addEventListener("change", e => { estado.incluirKms = e.target.checked; lembrar.gravar("incluirKms", estado.incluirKms); $("comKms").checked = estado.incluirKms; $("comKmsAnalise").checked = estado.incluirKms; desenhar(); });
   }
-  document.querySelectorAll("[data-formato]").forEach(b => b.addEventListener("click", () => {
-    estado.formatoCategorias = b.dataset.formato;
-    lembrar.gravar("formatoCategorias", estado.formatoCategorias);
-    desenharGraficoCategorias(lancamentosDoMes());
-  }));
 
   // Ajustes: renomear, trocar cor, desativar
   for (const idLista of ["catsDespesa", "catsReceita"]) {

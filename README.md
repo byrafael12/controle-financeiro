@@ -66,6 +66,8 @@ App pessoal de controle financeiro de Rafael de Freitas: receitas, despesas, car
 - Editar sem mudar data, cartão, forma de pagamento, total e parcelas (desde a versão 43) mantém o mês da fatura e o valor de cada parcela gravados no banco.
 - Parcela vinda da planilha (compra em andamento): cada parcela restante é cobrada pelo valor cheio, uma por fatura, sem redividir.
 - Contas fixas nascem como previstas (valor médio) e só viram pagas com valor e data confirmados.
+- Importar (desde a versão 45, só conferência): casa só data e valor exatos (parcela de cartão aceita até R$ 0,10 de arredondamento); o resto vai para Dúvida. CSV padrão de fatura: `data;descricao;valor;parcela;final_cartao;nome_cartao` (data dd/mm/aaaa, valor 123,45, negativo = pagamento ou crédito, parcela n/N ou vazio); de extrato: `data;descricao;valor` (negativo = saída).
+- Parcelas do cartão hoje (desde a versão 44): compra lançada no app ou vinda da fatura guarda a data da compra em todas as parcelas, e a parcela N cai no mesmo dia, N-1 meses depois; parcela da planilha antiga usa a própria data.
 - Gás Supergasbras (desde a versão 42, a partir de dez/2026): ao confirmar ou editar, consumo em m³ e total faturado em kg são obrigatórios (colunas `consumo_m3` e `faturado_kg`, script `supabase/07`).
 - Condomínio (desde a versão 42, a partir de dez/2026): ao confirmar a prevista, a observação vem do último pagamento com as parcelas "n/N" avançadas (trechos separados por " + "); a parcela que terminou sai.
 - Histórico de jan a set/2026 conta pelo mês da compra; de out/2026 em diante, pela fatura (outubro é mês de transição).
