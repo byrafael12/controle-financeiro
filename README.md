@@ -52,7 +52,7 @@ App pessoal de controle financeiro de Rafael de Freitas: receitas, despesas, car
 
 1. Configuração (formas de pagamento, paleta, categorias iniciais)
 2. Regras de cálculo, sem tela: centavos, competência pela fatura do cartão, parcelas, totais, reembolsos
-3. Acesso ao banco: camada `Banco` que traduz as coleções do app para as tabelas do Supabase (`lancamentos`, `categorias`, `cartoes`, `contas_fixas`, `orcamentos`, `geracoes`, `faturas_pagas`, `backups`, `config`)
+3. Acesso ao banco: camada `Banco` que traduz as coleções do app para as tabelas do Supabase (`lancamentos`, `categorias`, `cartoes`, `contas_fixas`, `orcamentos`, `geracoes`, `faturas_pagas`, `backups`, `config`). Desde a versão 43, a gravação feita no aparelho atualiza as consultas abertas sem ler o banco de novo, e consultas iguais simultâneas viram um pedido só.
 4. Telas: Início, Lançamentos, Análise, Planejar (faturas, contas fixas e cartões), Ajustes, formulário (desde a versão 20); Início com livre para gastar e contas fixas editadas numa folha (desde a versão 21); Análise com filtros e gráficos em SVG, sem Chart.js (desde a versão 22); lançamento rápido, tabela no notebook, parcelas em andamento e sugestão de valor médio (desde a versão 23)
 5. Gráficos e gestão: orçamento por média de 6 meses, comprometido futuro, backup JSON, exportação CSV, importação
 6. Tema claro/escuro e botão + arrastável
@@ -63,6 +63,7 @@ App pessoal de controle financeiro de Rafael de Freitas: receitas, despesas, car
 - Valores sempre em centavos inteiros (R$ 159,90 = 15990).
 - Cartão: fechamento no dia anterior ao melhor dia de compra; a compra conta no mês em que a fatura vence.
 - Parcelado (compra nova lançada no app): o total é dividido em centavos e a sobra fica na 1ª parcela.
+- Editar sem mudar data, cartão, forma de pagamento, total e parcelas (desde a versão 43) mantém o mês da fatura e o valor de cada parcela gravados no banco.
 - Parcela vinda da planilha (compra em andamento): cada parcela restante é cobrada pelo valor cheio, uma por fatura, sem redividir.
 - Contas fixas nascem como previstas (valor médio) e só viram pagas com valor e data confirmados.
 - Gás Supergasbras (desde a versão 42, a partir de dez/2026): ao confirmar ou editar, consumo em m³ e total faturado em kg são obrigatórios (colunas `consumo_m3` e `faturado_kg`, script `supabase/07`).

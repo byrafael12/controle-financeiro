@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-cV1BcEXwTibA2CmPnzOMLxS+vFYkqLC7DVpEc6snAEI='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-cG9KgRriCtfm10g139BKQsyaL+lDOHJ07Mm0A8kkhfk='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://vktqyguhdgawstlbvwkh.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; manifest-src 'self'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icone-192.png">
 <meta name="theme-color" content="#2b4c9c">
-<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 42, 13/11/2026: gás com consumo (m³) e faturado (kg); observação do condomínio repetida com as parcelas avançadas. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
+<!-- Controle Financeiro, app pessoal de Rafael de Freitas. Versão 43, 14/11/2026: editar sem mudar data, cartão e total mantém mês da fatura e valor de cada parcela; app lê bem menos dados do banco. Publicado no GitHub Pages: https://byrafael12.github.io/controle-financeiro/ -->
 <style>
 /* Layout: app de uso diário. Celular: conteúdo em coluna + menu fixo no rodapé + botão "+".
    Windows (>= 900px): menu na lateral esquerda e conteúdo em grade de duas colunas no Início. */
@@ -921,7 +921,7 @@ div.hb { cursor: default; }
       <div class="secao">
         <span class="rotulo">Sobre o app</span>
         <div class="cartao info">
-          <span>Versão 42: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
+          <span>Versão 43: lançamentos, categorias, análise, cartões, parcelas, contas fixas, reembolsos, orçamento, comprometido futuro, backup, exportação e uso sem internet.</span>
           <span>Toque no nome para renomear, no quadrado para trocar a cor, e em "Desativar" para tirar a categoria das listas sem perder os lançamentos antigos.</span>
           <span>Seus dados ficam numa área privada da sua conta: mesmo que você compartilhe o link, ninguém mais vê os lançamentos.</span>
           <span id="infoTotal" class="num"></span>
@@ -1204,6 +1204,7 @@ class Banco {
     this.uid = uid;
     this.ouvintes = new Map(); // tabela -> Set de funções que leem de novo
     this.pendentes = new Map();
+    this.lendo = new Map();         // v43: leituras em andamento (consultas iguais ao mesmo tempo usam uma só)
     this.armazem = new ArmazemLocal("controle-financeiro-" + uid);
     this.fila = new Map();          // "tabela|id" -> linha aguardando envio
     this.semRede = typeof navigator !== "undefined" && navigator.onLine === false;
@@ -1369,7 +1370,23 @@ class Banco {
     return { id, exists: true, data: () => ({ ...dados }) };
   }
 
+  // v43 (IMP-002): gravação feita por este aparelho. Cada consulta aberta se atualiza sozinha com a linha gravada;
+  // só lê o banco de novo a que não consegue (ainda sem leitura, limite cheio ou documento único).
+  mudou(nome, mudancas) {
+    this.esquecerLeituras(nome);
+    for (const ler of this.ouvintes.get(nome) || []) {
+      if (ler.aplicar && ler.aplicar(mudancas)) continue;
+      clearTimeout(ler.espera);
+      ler.espera = setTimeout(() => ler(), 120);
+    }
+  }
+
+  esquecerLeituras(nome) {
+    for (const chave of [...this.lendo.keys()]) if (chave.startsWith(this.uid + "|" + nome + "|")) this.lendo.delete(chave);
+  }
+
   avisar(nome, espera = 120) {
+    this.esquecerLeituras(nome);
     clearTimeout(this.pendentes.get(nome));
     this.pendentes.set(nome, setTimeout(() => {
       for (const ler of this.ouvintes.get(nome) || []) ler();
@@ -1431,7 +1448,20 @@ class Consulta {
 
   chaveLocal() { return [this.banco.uid, this.nome, JSON.stringify(this.filtros), this.limite || 0].join("|"); }
 
+  // v43: a mesma consulta pedida ao mesmo tempo por duas partes do app vira um pedido só
   async lerDoBanco() {
+    const chave = this.chaveLocal();
+    let promessa = this.banco.lendo.get(chave);
+    if (!promessa) {
+      promessa = this.lerDoBancoAgora();
+      this.banco.lendo.set(chave, promessa);
+      const limpar = () => { if (this.banco.lendo.get(chave) === promessa) this.banco.lendo.delete(chave); };
+      promessa.then(limpar, limpar);
+    }
+    return (await promessa).slice();
+  }
+
+  async lerDoBancoAgora() {
     const m = this.banco.mapa(this.nome);
     const linhas = [];
     const maximo = this.limite || 100000;
@@ -1467,24 +1497,53 @@ class Consulta {
       if (!this.banco.dadosDe || guardado.quando < this.banco.dadosDe) this.banco.dadosDe = guardado.quando;
       this.banco.aoMudar();
     }
+    return this.fotoDe(linhas);
+  }
+
+  fotoDe(linhas) {
     const pendentes = this.banco.pendentesDe(this.nome, this.filtros);
     const idsPendentes = new Set(pendentes.map(d => d.id));
     const docs = linhas.filter(l => !idsPendentes.has(l[this.banco.mapa(this.nome).chave])).map(l => this.banco.paraDoc(this.nome, l)).concat(pendentes);
-    return { docs, size: docs.length, empty: docs.length === 0 };
+    return { docs, size: docs.length, empty: docs.length === 0, linhas };
   }
 
   onSnapshot(aoLer, aoErrar) {
     let ativo = true;
     let versao = 0;
+    let linhas = null;      // v43: última leitura desta consulta (linhas do banco), para se atualizar sozinha
+    let entrega = null;
+    const m = this.banco.mapa(this.nome);
     const ler = async () => {
       const minha = ++versao;
       try {
         const foto = await this.get();
-        if (ativo && minha === versao) aoLer(foto);
+        if (ativo && minha === versao) { linhas = foto.linhas; aoLer(foto); }
       } catch (erro) {
         console.error(erro);
         if (ativo && aoErrar) aoErrar(erro);
       }
+    };
+    // v43 (IMP-002): aplica aqui a gravação feita neste aparelho; devolve false quando precisa ler o banco de novo
+    ler.aplicar = mudancas => {
+      if (!linhas || !m.chave || (this.limite && linhas.length >= this.limite)) return false;
+      let mexeu = false;
+      for (const { id, linha } of mudancas) {
+        const i = linhas.findIndex(l => l[m.chave] === id);
+        const nova = linha ? { ...(i >= 0 ? linhas[i] : {}), ...linha } : null;
+        const entra = Boolean(nova) && linhaAtende(nova, this.filtros);
+        if (i >= 0 && entra) linhas[i] = nova;
+        else if (i >= 0) linhas.splice(i, 1);
+        else if (entra) linhas.push(nova);
+        else continue;
+        mexeu = true;
+      }
+      if (mexeu) {
+        versao++; // leitura que estava em andamento chega depois e é descartada (a desta gravação vale mais)
+        this.banco.guardarLeitura(this.chaveLocal(), linhas);
+        clearTimeout(entrega);
+        entrega = setTimeout(() => { if (ativo) aoLer(this.fotoDe(linhas)); }, 120);
+      }
+      return true;
     };
     const desligar = this.banco.ouvir(this.nome, ler);
     ler();
@@ -1533,7 +1592,7 @@ class Documento {
     const { error } = await this.banco.cliente.from(m.tabela)
       .upsert(linha, { onConflict: m.chave ? "user_id," + m.chave : "user_id", defaultToNull: false });
     if (error) { const e = new ErroBanco(error); if (e.semRede) this.banco.marcarRede(false); throw e; }
-    this.banco.avisar(this.nome);
+    this.banco.mudou(this.nome, [{ id: this.id, linha }]);
   }
 
   // Altera só os campos informados
@@ -1551,7 +1610,7 @@ class Documento {
     const m = this.banco.mapa(this.nome);
     const { error } = await this.filtrar(this.banco.cliente.from(m.tabela).delete());
     if (error) { const e = new ErroBanco(error); if (e.semRede) this.banco.marcarRede(false); throw e; }
-    this.banco.avisar(this.nome);
+    this.banco.mudou(this.nome, [{ id: this.id, linha: null }]);
   }
 
   onSnapshot(aoLer, aoErrar) {
@@ -3092,7 +3151,14 @@ async function salvarForm(evento) {
     criadoEm: anterior ? (anterior.criadoEm || agora) : agora,
     atualizadoEm: agora
   };
-  const primeira = calcularCompetencia(data, cartao);
+  // v43 (IMP-003): mesma data, cartão, forma de pagamento, total e número de parcelas = mesma compra;
+  // mantém mês da fatura e valor de cada parcela como estão no banco (ex.: ajustes feitos pela fatura)
+  const antigosOrdem = antigos.slice().sort((a, b) => ((a.parcela && a.parcela.numero) || 0) - ((b.parcela && b.parcela.numero) || 0));
+  const mesmaCompra = Boolean(anterior) && data === anterior.data && base.formaPagamento === anterior.formaPagamento &&
+    (cartao ? cartao.id : null) === (anterior.cartaoId ?? null) && anterior.status !== "prevista" &&
+    (nParcelas === 1 ? !anterior.grupoParcela || ehParcelaImportada(anterior)
+      : Boolean(anterior.parcela) && form.grupo.length === nParcelas && nParcelas === anterior.parcela.total && centavos === anterior.parcela.valorTotalCentavos);
+  const primeira = mesmaCompra ? antigosOrdem[0].competencia : calcularCompetencia(data, cartao);
   if (mesFechado(primeira) || (anterior && mesFechado(anterior.competencia))) {
     const comp = mesFechado(primeira) ? primeira : anterior.competencia;
     $("erroForm").textContent = avisoMesFechado(comp);
@@ -3120,6 +3186,13 @@ async function salvarForm(evento) {
       parcela: { grupo, numero: i + 1, total: nParcelas, valorTotalCentavos: centavos },
       grupoParcela: grupo
     }));
+    if (mesmaCompra) {
+      // Mesma compra: cada parcela fica com o próprio código, valor e mês da fatura; o reembolso só é redividido se mudou
+      const reembIgual = (anterior.reembolso ? anterior.reembolso.quem + "|" + (anterior.reembolso.valorTotalCentavos || 0) : "") ===
+        (reembolsavel ? quemReembolsa + "|" + reembCentavos : "");
+      novos = novos.map((n, i) => ({ ...n, id: antigosOrdem[i].id, valorCentavos: antigosOrdem[i].valorCentavos, competencia: antigosOrdem[i].competencia,
+        parcela: antigosOrdem[i].parcela, grupoParcela: antigosOrdem[i].grupoParcela, reembolso: reembIgual ? (antigosOrdem[i].reembolso ?? null) : n.reembolso }));
+    }
   }
 
   lembrar.gravar("ultimoTipo", form.tipo);
