@@ -47,12 +47,15 @@ const TABELAS = [
     campos: { fixas_desde: "fixasDesde", ultimo_backup_baixado: "ultimoBackupBaixado", versao_esquema: "versaoEsquema", criado_em: "criadoEm" } },
   { tabela: "faturas_pagas", colecao: "faturasPagas", chave: "id", ordem: "id",
     campos: { cartao_id: "cartaoId", competencia: "competencia", pago_em: "pagoEm" } },
+  { tabela: "importacoes", colecao: "importacoes", chave: "id", ordem: "id",
+    campos: { criado_em: "criadoEm", arquivo: "arquivo", tipo: "tipo", cartao_id: "cartaoId", competencia: "competencia",
+      resumo: "resumo", desfazer: "desfazer", desfeita_em: "desfeitaEm" } },
   { tabela: "lancamentos", colecao: "lancamentos", chave: "id", ordem: "id",
     campos: { tipo: "tipo", descricao: "descricao", valor_centavos: "valorCentavos", data: "data", competencia: "competencia",
       categoria_id: "categoriaId", forma_pagamento: "formaPagamento", cartao_id: "cartaoId", status: "status", parcela: "parcela",
       grupo_parcela: "grupoParcela", conta_fixa_id: "contaFixaId", reembolso: "reembolso", reembolso_quem: "reembolsoQuem",
       reembolso_de: "reembolsoDe", observacao: "observacao", origem: "origem", versao_esquema: "versaoEsquema",
-      criado_em: "criadoEm", atualizado_em: "atualizadoEm", consumo_m3: "consumoM3", faturado_kg: "faturadoKg" } }
+      criado_em: "criadoEm", atualizado_em: "atualizadoEm", consumo_m3: "consumoM3", faturado_kg: "faturadoKg", importacao_id: "importacaoId" } }
 ];
 
 const PADRAO_ARQUIVO = /^backup-controle-financeiro-(\d{4}-\d{2})-(\d{2})\.json$/;
